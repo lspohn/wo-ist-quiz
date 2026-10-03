@@ -41,7 +41,7 @@ export const NAME_OVERRIDES = {
   VA: 'Vatikanstadt',
   TL: 'Osttimor',
   KY: 'Kaimaninseln',
-  '-99:Somaliland': 'Somaliland',
+  'Spratly Islands': 'Spratly-Inseln',
 };
 
 export const CONTINENT_DE = {
@@ -59,4 +59,19 @@ export const CONTINENT_OVERRIDES = {
   MV: 'Asia',
   MU: 'Africa',
   SC: 'Africa',
+};
+
+// Enklaven und Sondergebiete, die beim Antippen als umgebendes Land zählen (Natural Earth ADMIN → ISO)
+export const MERGE_INTO = {
+  'US Naval Base Guantanamo Bay': 'CU',
+  'Brazilian Island': 'BR',
+  'Baykonur Cosmodrome': 'KZ',
+  'Cyprus No Mans Area': 'CY',
+  'Akrotiri Sovereign Base Area': 'CY',
+  'Dhekelia Sovereign Base Area': 'CY',
+  'Northern Cyprus': 'CY',
+  Somaliland: 'SO',
+  'Siachen Glacier': 'IN',
+  'Southern Patagonian Ice Field': 'AR',
+  'Bir Tawil': 'EG',
 };

@@ -25,7 +25,7 @@ function fakeClock() {
   };
 }
 
-function setup(settings = { rounds: 5, timeLimit: 30 }) {
+function setup(settings = { rounds: 5, timeLimit: 20 }) {
   const clock = fakeClock();
   const lobby = new Lobby({ id: 'L1', hostId: 'a', settings, countries, clock, random: () => 0.3 });
   lobby.addPlayer({ id: 'a', name: 'Anna' });
@@ -35,7 +35,8 @@ function setup(settings = { rounds: 5, timeLimit: 30 }) {
 
 test('sanitizeSettings rejects unknown values', () => {
   assert.deepEqual(sanitizeSettings({ difficulty: 'leicht', timeLimit: 45, rounds: 15 }),
-    { difficulty: 'mittel', timeLimit: 30, rounds: 15 });
+    { difficulty: 'mittel', timeLimit: 40, rounds: 15 });
+  assert.equal(sanitizeSettings({ timeLimit: 20 }).timeLimit, 20);
 });
 
 test('only host can start the game', () => {
@@ -62,7 +63,7 @@ test('round ends on timeout and missing players get 0', () => {
   const { lobby, clock } = setup();
   lobby.start('a');
   lobby.guess('a', lobby.round.target.i);
-  clock.advance(30_000);
+  clock.advance(20_000);
   assert.equal(lobby.phase, 'reveal');
   const ben = lobby.round.results.find((r) => r.id === 'b');
   assert.deepEqual([ben.points, ben.category], [0, 'none']);
@@ -97,8 +98,9 @@ test('game runs all rounds then shows final with comments', () => {
   assert.equal(targets.size, 5);
   lobby.next('a');
   assert.equal(lobby.phase, 'final');
-  assert.match(lobby.finalComments.winner, /Anna/);
-  assert.match(lobby.finalComments.loser, /Ben/);
+  assert.match(lobby.finalComments.headline, /Anna/);
+  assert.match(lobbyView(lobby, 'b').final.mine, /Ben/);
+  assert.equal(lobbyView(lobby, 'a').final.mine, null);
   assert.equal(lobby.backToLobby('a'), true);
   assert.equal(lobby.players.get('a').score, 0);
 });
@@ -130,7 +132,7 @@ test('lobbyView hides other guesses during question', () => {
   assert.equal(viewB.players.find((p) => p.id === 'a').answered, true);
   assert.ok(!JSON.stringify(viewB).includes('"guess"'));
   assert.equal(typeof viewB.question.target, 'string');
-  assert.ok(viewB.question.remainingMs <= 30_000);
+  assert.ok(viewB.question.remainingMs <= 20_000);
 });
 
 test('late joiner can participate in running game', () => {
@@ -200,5 +202,49 @@ test('finish reports highscore ranks per player in the view', () => {
   }
   assert.equal(lobby.phase, 'final');
   assert.equal(lobbyView(lobby, 'a').final.highscoreRank, 1);
-  assert.equal(lobbyView(lobby, 'a').final.loser, null);
+  assert.ok(lobbyView(lobby, 'a').final.headline);
+});
+
+function playGame(lobby, clock, rounds, guesses) {
+  lobby.start('a');
+  const targets = [];
+  for (let r = 0; r < rounds; r++) {
+    targets.push(lobby.round.target.i);
+    for (const [id, pick] of Object.entries(guesses)) lobby.guess(id, pick(lobby.round.target.i));
+    lobby.next('a');
+  }
+  return targets;
+}
+
+test('scores accumulate across games of one lobby', () => {
+  const { lobby, clock } = setup({ rounds: 5 });
+  playGame(lobby, clock, 5, { a: (t) => t, b: () => 0 });
+  const first = lobby.players.get('a').score;
+  playGame(lobby, clock, 5, { a: (t) => t, b: () => 0 });
+  const a = lobby.players.get('a');
+  assert.equal(a.total, first + a.score);
+  assert.equal(lobby.gamesPlayed, 2);
+  const view = lobbyView(lobby, 'a').players.find((p) => p.id === 'a');
+  assert.equal(view.total, a.total);
+});
+
+test('targets do not repeat across games until the pool is used up', () => {
+  const clock = fakeClock();
+  const lobby = new Lobby({ id: 'L3', hostId: 'a', settings: { rounds: 15 }, countries, clock });
+  lobby.addPlayer({ id: 'a', name: 'Anna' });
+  const all = [];
+  for (let g = 0; g < 8; g++) all.push(...playGame(lobby, clock, 15, { a: (t) => t }));
+  assert.equal(new Set(all.slice(0, 120)).size, 120);
+});
+
+test('final comments do not repeat across games in one lobby', () => {
+  const clock = fakeClock();
+  const lobby = new Lobby({ id: 'L4', hostId: 'a', settings: { rounds: 5 }, countries, clock });
+  lobby.addPlayer({ id: 'a', name: 'Anna' });
+  const seen = [];
+  for (let g = 0; g < 6; g++) {
+    playGame(lobby, clock, 5, { a: (t) => t });
+    seen.push(lobby.finalComments.headline);
+  }
+  assert.equal(new Set(seen).size, 6);
 });

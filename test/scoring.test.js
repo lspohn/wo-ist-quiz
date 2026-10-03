@@ -23,7 +23,7 @@ test('scoreGuess no guess gives 0 with category none', () => {
 });
 
 test('scoreGuess near non-neighbor scores high and is close', () => {
-  const r = scoreGuess(by('ES'), by('MA'));
+  const r = scoreGuess(by('GB'), by('FR'));
   assert.equal(r.category, 'close');
   assert.ok(r.km < 50, `km=${r.km}`);
   assert.ok(r.points > 400);

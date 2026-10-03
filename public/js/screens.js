@@ -74,15 +74,35 @@ function segmented(label, key, options, value, enabled, onPick) {
   );
 }
 
-function playerList(lobby, { showScore = false } = {}) {
-  return h('ul.players', {}, lobby.players.map((p, idx) => h('li.player', { '--c': p.color, '--i': idx },
+/** score: 'game' (dieses Spiel), 'total' (Summe aller Spiele der Lobby) oder null */
+function playerList(lobby, { score = null } = {}) {
+  const players = score === 'total' ? [...lobby.players].sort((a, b) => b.total - a.total) : lobby.players;
+  return h('ul.players', {}, players.map((p, idx) => h(`li.player${p.id === lobby.you ? '.player-me' : ''}`, { '--c': p.color, '--i': idx },
+    score === 'total' ? h('span.player-rank', {}, `${idx + 1}.`) : null,
     h('span.player-dot', {}),
     h('span.player-name', {}, p.name),
     p.id === lobby.hostId ? h('span.tag', {}, 'Host') : null,
     p.id === lobby.you ? h('span.tag.tag-you', {}, 'du') : null,
     !p.connected ? h('span.tag.tag-off', {}, 'offline') : null,
-    showScore ? h('span.player-score', {}, fmt(p.score)) : null,
+    score ? h('span.player-score', {}, fmt(score === 'total' ? p.total : p.score)) : null,
   )));
+}
+
+function totalsSection(l) {
+  if (l.gamesPlayed < 1) return null;
+  return h('section', {},
+    h('h2.section-title', {}, `Gesamtwertung · ${l.gamesPlayed} ${l.gamesPlayed === 1 ? 'Spiel' : 'Spiele'}`),
+    playerList(l, { score: 'total' }),
+  );
+}
+
+// Podesthöhe proportional zur Punktzahl, Achse beginnt nicht bei 0
+function podiumHeight(score, scores) {
+  const max = Math.max(...scores);
+  const min = Math.min(...scores);
+  if (max === min) return 140;
+  const base = min - (max - min) * 0.35;
+  return Math.round(44 + 96 * ((score - base) / (max - base)));
 }
 
 /** Waiting room with settings (editable by host). */
@@ -99,7 +119,7 @@ export function roomScreen(app) {
     ),
     h('section.settings', {},
       segmented('Schwierigkeit', 'difficulty', [['mittel', 'Mittel'], ['schwer', 'Schwer']], s.difficulty, isHost, set),
-      segmented('Zeit pro Runde', 'timeLimit', [[30, '30 s'], [60, '60 s']], s.timeLimit, isHost, set),
+      segmented('Zeit pro Runde', 'timeLimit', [[20, '20 s'], [40, '40 s'], [60, '60 s']], s.timeLimit, isHost, set),
       segmented('Runden', 'rounds', [[5, '5'], [10, '10'], [15, '15']], s.rounds, isHost, set),
       h('p.hint', {}, s.difficulty === 'mittel'
         ? 'Mittel: rund 120 bekanntere Länder.'
@@ -109,6 +129,7 @@ export function roomScreen(app) {
       h('h2.section-title', {}, `Mitspieler (${l.players.length})`),
       playerList(l),
     ),
+    totalsSection(l),
     h('div.actions', {},
       isHost
         ? h('button.btn.btn-primary.btn-wide', { onclick: () => app.send('start') }, 'Spiel starten')
@@ -129,7 +150,7 @@ export function finalScreen(app) {
     h('h1.room-title', {}, 'Endstand'),
     h('div.podium', {}, order.map((p) => {
       const rank = l.players.indexOf(p) + 1;
-      return h(`div.podium-step.rank${rank}`, { '--c': p.color },
+      return h(`div.podium-step.rank${rank}`, { '--c': p.color, '--h': `${podiumHeight(p.score, top.map((x) => x.score))}px` },
         h('span.podium-name', {}, p.name),
         h('span.podium-score', {}, fmt(p.score)),
         h('span.podium-block', {}, String(rank)),
@@ -139,9 +160,10 @@ export function finalScreen(app) {
       h('span.hs-badge-rank', {}, `#${l.final.highscoreRank}`),
       h('span', {}, 'Du stehst in der Bestenliste', h('small', {}, `${DIFF_LABEL[l.settings.difficulty]} · ${l.settings.rounds} Runden`)),
     ) : null,
-    l.final?.winner ? h('p.quip', {}, l.final.winner) : null,
-    l.final?.loser ? h('p.quip.quip-loser', {}, l.final.loser) : null,
-    playerList(l, { showScore: true }),
+    l.final?.headline ? h('p.quip', {}, l.final.headline) : null,
+    l.final?.mine ? h('div.quip-mine', {}, h('span.section-title', {}, 'Dein Fazit'), h('p.quip.quip-loser', {}, l.final.mine)) : null,
+    l.players.length > 1 ? playerList(l, { score: 'game' }) : null,
+    l.gamesPlayed > 1 ? totalsSection(l) : null,
     highscorePanel({ fixed: l.settings, highlight: l.final?.highscoreRank }),
     h('div.actions', {},
       isHost ? h('button.btn.btn-primary.btn-wide', { onclick: () => app.send('start') }, 'Nochmal, gleiche Einstellungen') : null,

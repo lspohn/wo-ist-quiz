@@ -5,12 +5,14 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { geoArea, geoNaturalEarth1, geoPath, geoGraticule10 } from 'd3-geo';
 import mapshaper from 'mapshaper';
 import {
-  ALL_TARGETS, MEDIUM_TARGETS, NAME_OVERRIDES, CONTINENT_DE, CONTINENT_OVERRIDES,
+  ALL_TARGETS, MEDIUM_TARGETS, NAME_OVERRIDES, CONTINENT_DE, CONTINENT_OVERRIDES, MERGE_INTO,
 } from './countries-config.mjs';
 
-const SRC_URL = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson';
+const RES = process.env.MAP_RES ?? '10m';
+const SIMPLIFY = process.env.MAP_SIMPLIFY ?? '8%';
+const SRC_URL = `https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_${RES}_admin_0_countries.geojson`;
 const CACHE_DIR = fileURLToPath(new URL('../.cache/', import.meta.url));
-const CACHE = `${CACHE_DIR}ne50.geojson`;
+const CACHE = `${CACHE_DIR}ne${RES.replace('m', '')}.geojson`;
 const MAP_OUT = fileURLToPath(new URL('../public/data/map.json', import.meta.url));
 const META_OUT = fileURLToPath(new URL('../server/data/countries.json', import.meta.url));
 const WIDTH = 2000;
@@ -47,6 +49,12 @@ for (const set of owners.values()) {
   for (const a of set) for (const b of set) if (a !== b) neighbors[a].add(b);
 }
 
+function largestPart(f) {
+  if (f.geometry.type !== 'MultiPolygon') return f;
+  const parts = f.geometry.coordinates.map((coordinates) => ({ type: 'Polygon', coordinates }));
+  return parts.reduce((a, b) => (geoArea(b) > geoArea(a) ? b : a));
+}
+
 function samplePoints(geom) {
   const pts = rings(geom).flat();
   const step = Math.max(1, Math.ceil(pts.length / MAX_SAMPLES));
@@ -58,7 +66,7 @@ function samplePoints(geom) {
 }
 
 const simplified = await mapshaper.applyCommands(
-  '-i in.json -simplify 20% keep-shapes planar -o out.json format=geojson',
+  `-i in.json -simplify ${SIMPLIFY} keep-shapes planar -o out.json format=geojson`,
   { 'in.json': { type: 'FeatureCollection', features } },
 );
 const simple = JSON.parse(simplified['out.json']).features.map(rewind);
@@ -84,14 +92,35 @@ const mediumSet = new Set(MEDIUM_TARGETS);
 const mapCountries = [];
 const meta = [];
 
+// Pro Zielland genau ein Haupt-Feature (das flächengrößte); Enklaven/Doppelte werden darauf abgebildet
+const mainByIso = new Map();
+features.forEach((f, i) => {
+  const p = f.properties;
+  if (!targetSet.has(p.ISO_A2_EH) || ['Dependency', 'Lease'].includes(p.TYPE) || MERGE_INTO[p.ADMIN]) return;
+  const prev = mainByIso.get(p.ISO_A2_EH);
+  if (prev === undefined || geoArea(f) > geoArea(features[prev])) mainByIso.set(p.ISO_A2_EH, i);
+});
+const aliasOf = (f, i) => {
+  const into = MERGE_INTO[f.properties.ADMIN] ?? (targetSet.has(f.properties.ISO_A2_EH) ? f.properties.ISO_A2_EH : null);
+  const main = into ? mainByIso.get(into) : undefined;
+  return main !== undefined && main !== i ? main : null;
+};
+
 simple.forEach((f, i) => {
   const p = f.properties;
   const iso = p.ISO_A2_EH;
-  const isTarget = targetSet.has(iso) && p.TYPE !== 'Dependency';
+  const alias = aliasOf(features[i], i);
+  const isTarget = mainByIso.get(iso) === i;
   const continentKey = CONTINENT_OVERRIDES[iso] ?? p.CONTINENT;
   const b = path.bounds(f).flat().map((v) => Math.round(v));
-  const entry = { i, d: path(f), b };
-  if (path.area(f) < DOT_AREA) {
+  // Enklaven tragen die ID ihres Hauptlandes – Klick zählt als dieses Land
+  const entry = alias === null ? { i, d: path(f), b } : { i: alias, d: path(f), b, alias: true };
+  if (alias === null) {
+    // Kernbereich (größtes Teilpolygon) für Zoom, Labelpunkt für Pins – Frankreich ≠ Französisch-Guayana
+    entry.mb = path.bounds(largestPart(f)).flat().map((v) => Math.round(v));
+    entry.l = projection([p.LABEL_X, p.LABEL_Y]).map((v) => Math.round(v * 10) / 10);
+  }
+  if (alias === null && path.area(f) < DOT_AREA) {
     const [lx, ly] = projection([p.LABEL_X, p.LABEL_Y]);
     entry.dot = [Math.round(lx * 10) / 10, Math.round(ly * 10) / 10];
   }
@@ -99,7 +128,8 @@ simple.forEach((f, i) => {
   meta.push({
     i,
     iso,
-    name: NAME_OVERRIDES[iso] ?? NAME_OVERRIDES[`${iso}:${p.NAME}`] ?? p.NAME_DE,
+    ...(alias === null ? {} : { alias }),
+    name: NAME_OVERRIDES[iso] ?? NAME_OVERRIDES[p.ADMIN] ?? p.NAME_DE,
     continent: CONTINENT_DE[continentKey] ?? continentKey,
     target: isTarget,
     medium: isTarget && mediumSet.has(iso),
@@ -107,6 +137,18 @@ simple.forEach((f, i) => {
     pts: samplePoints(features[i].geometry),
   });
 });
+
+// Enklaven in ihr Hauptland falten: Nachbarn und Grenzpunkte übernehmen, Verweise umbiegen
+const mainOf = (i) => meta[i].alias ?? i;
+for (const m of meta) {
+  if (m.alias === undefined) continue;
+  const main = meta[m.alias];
+  main.neighbors.push(...m.neighbors);
+  main.pts.push(...m.pts);
+}
+for (const m of meta) {
+  m.neighbors = [...new Set(m.neighbors.map(mainOf))].filter((n) => n !== m.i && n !== mainOf(m.i));
+}
 
 const graticule = geoPath(projection).digits(0)(geoGraticule10());
 const outline = geoPath(projection).digits(0)({ type: 'Sphere' });

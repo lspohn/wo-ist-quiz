@@ -91,7 +91,7 @@
   font-family: var(--display); font-size: 3rem; color: var(--ink);
   background: linear-gradient(180deg, var(--c), color-mix(in srgb, var(--c) 55%, #000));
 }
-.rank1 .podium-block { height: 140px; } .rank2 .podium-block { height: 100px; } .rank3 .podium-block { height: 70px; }
+.podium-block { height: var(--h, 100px); transition: height 0.6s ease; }
 .rank1 { animation-delay: 0.35s; } .rank2 { animation-delay: 0.15s; } .rank3 { animation-delay: 0s; }
 .quip { margin: 0; font-family: var(--display); font-style: italic; font-size: 1.35rem; line-height: 1.3; color: var(--paper); }
 .quip-loser { color: var(--paper-dim); font-size: 1.15rem; }
@@ -126,3 +126,7 @@
 }
 .hs-badge small { display: block; font-weight: 500; color: var(--muted); font-size: 0.8rem; }
 .hs-badge-rank { font-family: var(--display); font-size: 2.6rem; line-height: 1; color: var(--mint); }
+
+.player-me { border-color: rgba(46, 230, 166, 0.45); box-shadow: inset 4px 0 0 var(--mint); }
+.player-rank { font-family: var(--display); font-size: 1.3rem; color: var(--muted); min-width: 2ch; }
+.quip-mine { display: flex; flex-direction: column; gap: 4px; padding-left: 14px; border-left: 3px solid var(--gold); }

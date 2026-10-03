@@ -24,6 +24,7 @@ export function lobbyView(lobby, playerId) {
     name: p.name,
     color: p.color,
     score: p.score,
+    total: p.total,
     connected: p.connected,
     answered: lobby.phase === 'question' ? round.guesses.has(p.id) : false,
   }));
@@ -36,6 +37,7 @@ export function lobbyView(lobby, playerId) {
     players,
     roundNo: lobby.roundNo,
     roundKey: lobby.roundKey,
+    gamesPlayed: lobby.gamesPlayed,
   };
   if (lobby.phase === 'question') {
     const mine = round.guesses.get(playerId);
@@ -55,7 +57,11 @@ export function lobbyView(lobby, playerId) {
     };
   }
   if (lobby.phase === 'final') {
-    view.final = { ...lobby.finalComments, highscoreRank: lobby.highscoreRanks[playerId] ?? null };
+    view.final = {
+      headline: lobby.finalComments?.headline ?? null,
+      mine: lobby.finalComments?.personal[playerId] ?? null,
+      highscoreRank: lobby.highscoreRanks[playerId] ?? null,
+    };
   }
   return view;
 }

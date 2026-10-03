@@ -1,5 +1,6 @@
 // Frage- und Auflösungsphase: HUD oben, Bestätigen-/Ergebnis-Sheet unten.
-import { h, fmt, toast, CATEGORY_LABEL } from './dom.js';
+import { h, toast } from './dom.js';
+import { renderRevealPanel, showRevealOnMap } from './reveal.js';
 
 const WATER_QUIPS = ['Das ist Wasser.', 'Ozean. Nicht wählbar, auch wenn er sich schön anfühlt.', 'Da schwimmen nur Fische.'];
 
@@ -50,7 +51,8 @@ export function createGame(app, map) {
       h('p.hud-ask', {}, 'Wo liegt'),
       h('h2.hud-target', {}, q.target),
       h('div.timer', {}, h('div.timer-fill', {})),
-      h('div.hud-dots', {}, l.players.map((p) => h(`span.hud-dot${p.answered ? '.done' : ''}`, { '--c': p.color, title: p.name }))),
+      h('div.hud-dots', {}, l.players.map((p) => h(`span.hud-dot${p.answered ? '.done' : ''}${p.id === l.you ? '.me' : ''}`, { '--c': p.color },
+        h('span.hud-dot-name', {}, p.id === l.you ? 'Du' : p.name)))),
     );
   }
 
@@ -115,70 +117,15 @@ export function createGame(app, map) {
     renderPickSheet(l, l.question);
   }
 
-  function resultRow(l, r, idx) {
-    const p = l.players.find((x) => x.id === r.id);
-    const row = h('li.result', { '--c': p?.color ?? '#999', '--i': idx },
-      h('div.result-line', {},
-        h('span.player-dot', {}),
-        h('span.result-name', {}, p?.name ?? '?'),
-        h('span.result-guess', {}, r.guessName ?? '—', r.km ? ` · ${fmt(r.km)} km` : ''),
-        h('span.result-points', {}, `+${fmt(r.points)}`),
-      ),
-      h('p.result-comment', {}, r.comment),
-    );
-    row.addEventListener('click', () => row.classList.toggle('open'));
-    return row;
-  }
-
   function reveal(l, fresh) {
-    const rv = l.reveal;
-    const mine = rv.results.find((r) => r.id === l.you);
-    const isHost = l.hostId === l.you;
-    autoNextAt = performance.now() + rv.autoNextMs;
-    hud.hidden = false;
-    hud.replaceChildren(
-      h('div.hud-row', {}, h('span.hud-round', {}, `Runde ${l.roundNo}/${l.settings.rounds} · Auflösung`)),
-      h('h2.hud-target.solved', {}, rv.target.name),
-      h('p.hud-ask', {}, rv.target.continent),
-    );
-    hud.classList.remove('hurry');
-    sheet.hidden = false;
-    sheet.className = `sheet sheet-reveal cat-${mine?.category ?? 'none'}`;
-    const others = rv.results.filter((r) => r.id !== l.you);
-    sheet.replaceChildren(
-      mine ? h('div.verdict', {},
-        h('p.verdict-cat', {}, CATEGORY_LABEL[mine.category]),
-        h('p.verdict-points', {}, `+${fmt(mine.points)}`, mine.bonus ? h('small', {}, ` inkl. ${mine.bonus} Tempo`) : null),
-        h('p.verdict-detail', {}, mine.guessName ? `Dein Tipp: ${mine.guessName}${mine.km ? ` · ${fmt(mine.km)} km daneben` : ''}` : 'Kein Tipp abgegeben'),
-        h('p.verdict-comment', {}, mine.comment),
-      ) : null,
-      others.length ? h('ul.results', {}, others.map((r, idx) => resultRow(l, r, idx))) : null,
-      h('div.sheet-actions', {},
-        isHost
-          ? h('button.btn.btn-primary.btn-wide', { onclick: () => app.send('next', { key: l.roundKey }) }, rv.last ? 'Zum Endstand' : 'Nächstes Land', h('span.auto-next', {}, ''))
-          : h('p.waiting', {}, rv.last ? 'Gleich kommt der Endstand · ' : 'Nächste Runde in ', h('span.auto-next', {}, '')),
-      ),
-    );
+    autoNextAt = performance.now() + l.reveal.autoNextMs;
+    renderRevealPanel({ l, hud, sheet, app });
     startTicker();
     if (!fresh) return;
     map.resetGestures();
     map.setInteractive(false);
-    map.setCandidate(null);
-    map.setLocked(null);
-    map.setTarget(rv.target.i);
-    const wrong = rv.results.filter((r) => r.guess != null && r.guess !== rv.target.i).map((r) => r.guess);
-    map.setWrong(wrong);
-    map.setMarkers(rv.results.filter((r) => r.guess != null).map((r) => {
-      const p = l.players.find((x) => x.id === r.id);
-      return { i: r.guess, color: p?.color ?? '#999', label: (p?.name ?? '?').slice(0, 1).toUpperCase() };
-    }));
-    const b = [...map.bounds(rv.target.i)];
-    if (mine?.guess != null && mine.km != null && mine.km < 4000) {
-      const g = map.bounds(mine.guess);
-      b[0] = Math.min(b[0], g[0]); b[1] = Math.min(b[1], g[1]);
-      b[2] = Math.max(b[2], g[2]); b[3] = Math.max(b[3], g[3]);
-    }
-    requestAnimationFrame(() => map.zoomToBounds(b, sheetInset()));
+    showRevealOnMap({ l, map, inset: sheetInset });
+    const mine = l.reveal.results.find((r) => r.id === l.you);
     if (mine?.category === 'exact') navigator.vibrate?.([20, 40, 20]);
   }
 

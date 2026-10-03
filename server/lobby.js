@@ -1,13 +1,14 @@
 import { CommentPicker } from './comments.js';
+import { Deck } from './deck.js';
 import { targetPool } from './geo.js';
 import { scoreGuess } from './scoring.js';
 
 export const SETTINGS_OPTIONS = {
   difficulty: ['mittel', 'schwer'],
-  timeLimit: [30, 60],
+  timeLimit: [20, 40, 60],
   rounds: [5, 10, 15],
 };
-export const DEFAULT_SETTINGS = { difficulty: 'mittel', timeLimit: 30, rounds: 10 };
+export const DEFAULT_SETTINGS = { difficulty: 'mittel', timeLimit: 40, rounds: 10 };
 export const MAX_PLAYERS = 12;
 export const REVEAL_MS = 45_000;
 export const HOST_GRACE_MS = 15_000;
@@ -46,7 +47,8 @@ export class Lobby {
     this.round = null;
     this.roundNo = 0;
     this.gameNo = 0;
-    this.usedTargets = new Set();
+    this.gamesPlayed = 0;
+    this.deck = new Deck((d) => targetPool(countries, d), random);
     this.comments = new CommentPicker(random);
     this.timer = null;
     this.hostTimer = null;
@@ -76,7 +78,7 @@ export class Lobby {
     if (this.players.size >= MAX_PLAYERS) return false;
     const used = new Set([...this.players.values()].map((p) => p.color));
     const color = PLAYER_COLORS.find((c) => !used.has(c)) ?? PLAYER_COLORS[0];
-    this.players.set(id, { id, name, color, score: 0, connected: true, joinedAt: this.clock.now() });
+    this.players.set(id, { id, name, color, score: 0, total: 0, connected: true, joinedAt: this.clock.now() });
     this.ensureHost();
     this.touch();
     return true;
@@ -131,8 +133,6 @@ export class Lobby {
   start(byId) {
     if (byId !== this.hostId || (this.phase !== 'lobby' && this.phase !== 'final')) return false;
     for (const p of this.players.values()) p.score = 0;
-    this.usedTargets.clear();
-    this.comments = new CommentPicker(this.random);
     this.roundNo = 0;
     this.gameNo += 1;
     this.finalComments = null;
@@ -142,10 +142,7 @@ export class Lobby {
 
   startRound() {
     this.clock.clearTimeout(this.timer);
-    let pool = targetPool(this.countries, this.settings.difficulty).filter((c) => !this.usedTargets.has(c.i));
-    if (!pool.length) pool = targetPool(this.countries, this.settings.difficulty);
-    const target = pool[Math.floor(this.random() * pool.length)];
-    this.usedTargets.add(target.i);
+    const target = this.deck.draw(this.settings.difficulty);
     this.roundNo += 1;
     const now = this.clock.now();
     const limitMs = this.settings.timeLimit * 1000;
@@ -162,8 +159,10 @@ export class Lobby {
       return false;
     }
     if (this.round.guesses.has(byId)) return false;
-    const country = this.countries[countryIndex];
-    if (!country || !Number.isInteger(countryIndex)) return false;
+    if (!Number.isInteger(countryIndex)) return false;
+    const raw = this.countries[countryIndex];
+    const country = raw?.alias !== undefined ? this.countries[raw.alias] : raw;
+    if (!country) return false;
     this.round.guesses.set(byId, { country, at: this.clock.now() });
     this.checkRoundComplete();
     this.touch();
@@ -219,14 +218,24 @@ export class Lobby {
     this.clock.clearTimeout(this.timer);
     this.phase = 'final';
     const ranking = this.standings();
+    for (const p of ranking) p.total += p.score;
+    this.gamesPlayed += 1;
     this.highscoreRanks = this.onFinish(this) ?? {};
-    const winner = ranking[0];
-    const loser = ranking.length > 1 ? ranking[ranking.length - 1] : null;
-    this.finalComments = {
-      winner: winner ? this.comments.pick(ranking.length === 1 ? 'solo' : 'winner', { name: winner.name }) : null,
-      loser: loser && loser.score < winner.score ? this.comments.pick('loser', { name: loser.name }) : null,
-    };
+    this.finalComments = this.pickFinalComments(ranking);
     this.touch();
+  }
+
+  /** Headline for the winner, a personal verdict for everyone else. */
+  pickFinalComments(ranking) {
+    const [winner] = ranking;
+    if (!winner) return { headline: null, personal: {} };
+    const headline = this.comments.pick(ranking.length === 1 ? 'solo' : 'winner', { name: winner.name });
+    const personal = {};
+    ranking.slice(1).forEach((p, idx) => {
+      const isLast = idx === ranking.length - 2 && p.score < winner.score;
+      personal[p.id] = this.comments.pick(isLast ? 'loser' : 'middle', { name: p.name });
+    });
+    return { headline, personal };
   }
 
   backToLobby(byId) {

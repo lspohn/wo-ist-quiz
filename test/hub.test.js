@@ -19,6 +19,7 @@ test('repeated hello on one socket does not create ghost players', () => {
   assert.equal(hub.lobbies.size, 1);
   const lobby = [...hub.lobbies.values()][0];
   assert.equal(lobby.connectedPlayers.length, 0);
+  lobby.dispose();
 });
 
 test('finished game is recorded in highscores', () => {

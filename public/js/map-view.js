@@ -1,9 +1,12 @@
-// SVG-Weltkarte: Rendering, Zoom-Zustand, Markierungen.
+// SVG-Weltkarte: Rendering, Zoom-Zustand, Hervorhebungen.
 // Die Karte enthält bewusst keine Ländernamen – nur numerische IDs.
 import { attachGestures } from './gestures.js';
+import { createOverlay } from './map-overlay.js';
+import { createPicker } from './map-pick.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const DOT_SCREEN_PX = 16;
+const MARK_CLASSES = ['candidate', 'locked', 'target', 'guessed'];
 
 const svgEl = (tag, attrs = {}) => {
   const el = document.createElementNS(NS, tag);
@@ -20,38 +23,43 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
   world.append(svgEl('path', { d: data.graticule, class: 'graticule' }));
   const land = svgEl('g', { class: 'land' });
   const dots = svgEl('g', { class: 'dots' });
-  const markers = svgEl('g', { class: 'markers' });
-  const paths = new Map();
+  const els = new Map(); // Haupt-ID → alle Pfade/Punkte (inkl. Enklaven)
+  const byIndex = new Map();
   const dotEls = [];
+  const remember = (i, el) => { if (!els.has(i)) els.set(i, []); els.get(i).push(el); };
 
   for (const c of data.c) {
     const p = svgEl('path', { d: c.d, 'data-i': c.i, class: `country tint${c.i % 5}` });
     land.append(p);
-    paths.set(c.i, p);
+    remember(c.i, p);
+    if (c.alias) continue;
+    byIndex.set(c.i, c);
     if (c.dot) {
+      // Fangbereich um den Punkt übernimmt map-pick.js
       const vis = svgEl('circle', { cx: c.dot[0], cy: c.dot[1], class: 'dot', 'data-i': c.i });
-      const hit = svgEl('circle', { cx: c.dot[0], cy: c.dot[1], class: 'dot-hit', 'data-i': c.i });
-      dots.append(vis, hit);
-      dotEls.push({ c, vis, hit });
+      dots.append(vis);
+      remember(c.i, vis);
+      dotEls.push({ c, vis });
     }
   }
-  world.append(land, dots, markers);
+  world.append(land, dots);
   svg.append(world);
   host.append(svg);
 
-  const byIndex = new Map(data.c.map((c) => [c.i, c]));
   const s = { k: 1, x: 0, y: 0 };
   let minK = 1;
   let maxK = 80;
   let anim = null;
-  let markerEls = [];
   let gestures = null;
-
   const size = () => ({ W: host.clientWidth, H: host.clientHeight });
+  const overlay = createOverlay(host, ([x, y]) => [s.x + x * s.k, s.y + y * s.k]);
+  const screenSize = (i) => {
+    const c = byIndex.get(i);
+    return c ? Math.max(c.b[2] - c.b[0], c.b[3] - c.b[1]) * s.k : Infinity;
+  };
+  const pick = createPicker(screenSize);
 
-  function clampK(k) {
-    return Math.max(minK, Math.min(maxK, k));
-  }
+  const clampK = (k) => Math.max(minK, Math.min(maxK, k));
 
   function clampXY() {
     const { W, H } = size();
@@ -66,18 +74,14 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
 
   function apply() {
     world.setAttribute('transform', `translate(${s.x.toFixed(2)} ${s.y.toFixed(2)}) scale(${s.k.toFixed(4)})`);
-    const inv = 1 / s.k;
-    for (const m of markerEls) m.el.setAttribute('transform', `translate(${m.x} ${m.y}) scale(${inv})`);
-    svg.style.setProperty('--k', s.k);
+    overlay.place();
   }
 
   function updateDots() {
     const inv = 1 / s.k;
     for (const d of dotEls) {
-      const w = Math.max(d.c.b[2] - d.c.b[0], d.c.b[3] - d.c.b[1]) * s.k;
-      const show = w < DOT_SCREEN_PX;
-      d.vis.setAttribute('r', show ? 3.2 * inv : 0);
-      d.hit.setAttribute('r', show ? 14 * inv : 0);
+      const show = screenSize(d.c.i) < DOT_SCREEN_PX;
+      d.vis.setAttribute('r', show ? 3.5 * inv : 0);
     }
   }
 
@@ -100,7 +104,7 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
     const { W, H } = size();
     const fit = Math.min(W / data.w, H / data.h);
     minK = fit * 0.9;
-    maxK = fit * 90;
+    maxK = fit * 120;
     // Hochkant: etwas reinzoomen, damit Länder nicht winzig sind
     const k = W < H ? Math.min(H / data.h, fit * 2.2) : fit;
     s.k = k;
@@ -111,7 +115,7 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
     updateDots();
   }
 
-  function animateTo(k, x, y, ms = 650) {
+  function animateTo(k, x, y, ms = 700) {
     cancelAnimationFrame(anim);
     gestures?.stopInertia();
     const from = { ...s };
@@ -129,7 +133,7 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
     anim = requestAnimationFrame(step);
   }
 
-  /** Zoom to world-space bounds [x0,y0,x1,y1] with padding (insets in px). */
+  /** Zoom to world-space bounds [x0,y0,x1,y1] inside the free area (insets in px). */
   function zoomToBounds(b, inset = {}) {
     const { W, H } = size();
     const top = inset.top ?? 80;
@@ -138,92 +142,64 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
     const right = inset.right ?? 30;
     const aw = Math.max(80, W - left - right);
     const ah = Math.max(80, H - top - bottom);
-    const bw = Math.max(b[2] - b[0], 240);
-    const bh = Math.max(b[3] - b[1], 150);
-    const k = clampK(Math.min(aw / bw, ah / bh) * 0.8);
+    const bw = Math.max(b[2] - b[0], 90);
+    const bh = Math.max(b[3] - b[1], 60);
+    const k = clampK(Math.min(aw / bw, ah / bh) * 0.88);
     const cx = (b[0] + b[2]) / 2;
     const cy = (b[1] + b[3]) / 2;
     animateTo(k, left + aw / 2 - cx * k, top + ah / 2 - cy * k);
   }
 
-  function countryAt(clientX, clientY) {
-    const el = document.elementFromPoint(clientX, clientY);
-    const hit = el?.closest?.('[data-i]');
-    return hit ? Number(hit.getAttribute('data-i')) : null;
-  }
-
   function setClass(cls, indices) {
     for (const el of svg.querySelectorAll(`.${cls}`)) el.classList.remove(cls);
     for (const i of indices) {
-      if (i == null) continue;
-      paths.get(i)?.classList.add(cls);
-      dots.querySelector(`.dot[data-i="${i}"]`)?.classList.add(cls);
+      for (const el of els.get(i) ?? []) {
+        el.classList.add(cls);
+        if (el.tagName === 'path') land.append(el); // nach oben, damit die Umrandung sichtbar ist
+      }
     }
-    // markierte Länder nach oben, damit ihre Umrandung sichtbar ist
-    for (const i of indices) { const p = paths.get(i); if (p) land.append(p); }
-  }
-
-  function center(i) {
-    const c = byIndex.get(i);
-    if (c.dot) return c.dot;
-    return [(c.b[0] + c.b[2]) / 2, (c.b[1] + c.b[3]) / 2];
-  }
-
-  /** Pins for players' guesses: [{i, color, label}] */
-  function setMarkers(list) {
-    markers.replaceChildren();
-    markerEls = [];
-    const stack = new Map();
-    for (const m of list) {
-      const [x, y] = center(m.i);
-      const n = stack.get(m.i) ?? 0;
-      stack.set(m.i, n + 1);
-      const g = svgEl('g', { class: 'pin' });
-      g.style.setProperty('--c', m.color);
-      g.style.setProperty('--delay', `${markerEls.length * 90}ms`);
-      const inner = svgEl('g', { transform: `translate(${n * 22} 0)` });
-      inner.append(
-        svgEl('path', { d: 'M0 0 C -4 -8 -12 -12 -12 -21 A 12 12 0 1 1 12 -21 C 12 -12 4 -8 0 0 Z', class: 'pin-body' }),
-      );
-      const t = svgEl('text', { x: 0, y: -17, class: 'pin-label' });
-      t.textContent = m.label;
-      inner.append(t);
-      g.append(inner);
-      markers.append(g);
-      markerEls.push({ el: g, x, y });
-    }
-    apply();
   }
 
   gestures = attachGestures(svg, view, {
     onLongPressStart,
     onLongPressCancel,
-    onLongPress: (x, y) => onLongPress?.(countryAt(x, y), x, y),
+    onLongPress: (x, y) => onLongPress?.(pick(x, y), x, y),
     onSettle: updateDots,
   });
 
   let resizeT;
   new ResizeObserver(() => {
     clearTimeout(resizeT);
-    resizeT = setTimeout(() => { const keep = { ...s }; if (!keep.k || keep.k === 1) fitAll(); else { clampXY(); apply(); updateDots(); } }, 60);
+    resizeT = setTimeout(() => { clampXY(); apply(); updateDots(); }, 60);
   }).observe(host);
   fitAll();
 
-  return {
+  const api = {
     fitAll,
     zoomToBounds,
-    bounds: (i) => byIndex.get(i)?.b,
-    setCandidate: (i) => setClass('candidate', [i]),
-    setLocked: (i) => setClass('locked', [i]),
-    setTarget: (i) => setClass('target', [i]),
-    setWrong: (list) => setClass('wrong', list),
-    setMarkers,
-    clearAll() {
-      for (const cls of ['candidate', 'locked', 'target', 'wrong']) setClass(cls, []);
-      setMarkers([]);
+    /** Core bounds (largest part) – France without French Guiana. */
+    coreBounds: (i) => byIndex.get(i)?.mb ?? byIndex.get(i)?.b,
+    anchor: (i) => { const c = byIndex.get(i); return c?.dot ?? c?.l; },
+    setCandidate(i) {
+      setClass('candidate', i == null ? [] : [i]);
+      overlay.setRing(i == null ? null : api.anchor(i));
     },
-    cancelPress: () => gestures.cancel(),
+    setLocked: (i) => setClass('locked', i == null ? [] : [i]),
+    setTarget: (i) => setClass('target', i == null ? [] : [i]),
+    /** Fill guessed countries in the guessing player's colour: [{ i, color }] */
+    setGuessFills(list) {
+      for (const el of svg.querySelectorAll('.guessed')) el.style.removeProperty('--g');
+      setClass('guessed', list.map((g) => g.i));
+      for (const g of list) for (const el of els.get(g.i) ?? []) el.style.setProperty('--g', g.color);
+    },
+    overlay,
+    clearAll() {
+      for (const cls of MARK_CLASSES) setClass(cls, []);
+      overlay.clear();
+      overlay.setLines([]);
+    },
     resetGestures: () => gestures.reset(),
     setInteractive: (on) => svg.classList.toggle('readonly', !on),
   };
+  return api;
 }
