@@ -1,6 +1,7 @@
 // Frage- und Auflösungsphase: HUD oben, Bestätigen-/Ergebnis-Sheet unten.
 import { h, toast, flag, noted, fill } from './dom.js';
 import { renderRevealPanel, showRevealOnMap } from './reveal.js';
+import { leaveButton } from './leave.js';
 import { MODES, PROMPTS, mapConfig } from './modes.js';
 
 const MISS_QUIPS = {
@@ -51,6 +52,7 @@ export function createGame(app, map) {
     hud.hidden = false;
     fill(hud, 
       h('div.hud-row', {},
+        leaveButton(app),
         h('span.hud-round', {}, `Runde ${l.roundNo}/${l.settings.rounds}`),
         h('span.hud-answered', {}, `${answered}/${l.players.filter((p) => p.connected).length} getippt`),
         h('span.timer-num', {}, Math.ceil(q.remainingMs / 1000)),

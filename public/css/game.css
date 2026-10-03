@@ -116,3 +116,12 @@
 .star { font-size: 0.5em; color: var(--gold); margin-left: 0.05em; }
 .hud-note { margin: -2px 0 6px; font-size: 0.75rem; color: var(--muted); font-style: italic; }
 .mini-flag { height: 0.85em; width: auto; margin-right: 5px; vertical-align: -0.08em; border-radius: 2px; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2); }
+
+/* Verlassen-Knopf (einziges klickbares Element im HUD) */
+.hud-leave {
+  pointer-events: auto; flex: none; min-width: 32px; height: 32px; padding: 0 10px; margin: -4px 0;
+  border-radius: 999px; border: 1.5px solid rgba(239, 228, 204, 0.25); background: rgba(11, 22, 34, 0.7);
+  color: var(--paper-dim); font: 700 0.85rem var(--ui); letter-spacing: 0; text-transform: none; cursor: pointer;
+}
+.hud-leave.armed { background: var(--danger); border-color: var(--danger); color: #fff; }
+.hud-leave:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }

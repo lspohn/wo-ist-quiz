@@ -1,5 +1,6 @@
 // Auflösung: Karte (Ziel pulsiert, Tipps in Spielerfarben mit Linien) und Ergebnistabelle.
 import { h, fmt, flag, noted, fill, CATEGORY_LABEL } from './dom.js';
+import { leaveButton } from './leave.js';
 
 const initials = (name) => name.trim().slice(0, 2);
 
@@ -29,7 +30,7 @@ export function renderRevealPanel({ l, hud, sheet, app }) {
   hud.hidden = false;
   hud.classList.remove('hurry');
   fill(hud, 
-    h('div.hud-row', {}, h('span.hud-round', {}, `Runde ${l.roundNo}/${l.settings.rounds} · Auflösung`)),
+    h('div.hud-row', {}, leaveButton(app), h('span.hud-round', {}, `Runde ${l.roundNo}/${l.settings.rounds} · Auflösung`)),
     h('h2.hud-target.solved', {}, flag(rv.target.flag, 'hud-flag'), ...noted(rv.target.name, rv.target.note)),
     h('p.hud-ask', {}, rv.target.sub ?? ''),
     rv.target.note ? h('p.hud-note', {}, `* ${rv.target.note}`) : null,
