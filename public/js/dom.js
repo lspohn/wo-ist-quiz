@@ -1,0 +1,41 @@
+/** Tiny element factory: h('div.cls', {onclick}, ...children) */
+export function h(spec, props = {}, ...children) {
+  const [tag, ...classes] = spec.split('.');
+  const el = document.createElement(tag || 'div');
+  if (classes.length) el.className = classes.join(' ');
+  for (const [k, v] of Object.entries(props ?? {})) {
+    if (v == null || v === false) continue;
+    if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+    else if (k.startsWith('--')) el.style.setProperty(k, v);
+    else if (k in el && k !== 'list') el[k] = v;
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of children.flat()) {
+    if (c == null || c === false) continue;
+    el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  }
+  return el;
+}
+
+let toastTimer;
+/** Short message at the bottom of the screen. */
+export function toast(text, ms = 2200) {
+  const el = document.getElementById('toast');
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+}
+
+export const fmt = (n) => Number(n).toLocaleString('de-DE');
+
+export const CATEGORY_LABEL = {
+  exact: 'Volltreffer',
+  neighbor: 'Nachbarland',
+  close: 'Knapp daneben',
+  continent: 'Richtiger Kontinent',
+  far: 'Falscher Kontinent',
+  veryfar: 'Weit, weit weg',
+  none: 'Keine Antwort',
+};

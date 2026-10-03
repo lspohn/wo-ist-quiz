@@ -1,0 +1,22 @@
+{
+  "name": "laender-quiz",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Multiplayer-Länderquiz fürs Heimnetz",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test test/",
+    "build:map": "node scripts/build-map.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "d3-geo": "^3.1.1",
+    "mapshaper": "^0.7.72"
+  }
+}

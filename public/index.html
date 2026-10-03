@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1622">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Länderquiz</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="preload" href="/data/map.json" as="fetch" crossorigin>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/screens.css">
+  <link rel="stylesheet" href="/css/game.css">
+</head>
+<body>
+  <div id="map" class="map-host" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <main id="screen" class="screen"></main>
+  <section id="hud" class="hud" hidden></section>
+  <section id="sheet" class="sheet" hidden></section>
+  <div id="press-ring" class="press-ring" hidden></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="conn" class="conn" hidden>Verbindung wird wiederhergestellt …</div>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

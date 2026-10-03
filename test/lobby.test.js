@@ -1,0 +1,145 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { loadCountries } from '../server/geo.js';
+import { Lobby, REVEAL_MS, HOST_GRACE_MS, sanitizeSettings } from '../server/lobby.js';
+import { lobbyView } from '../server/lobby-view.js';
+
+const countries = loadCountries();
+
+function fakeClock() {
+  let t = 1_000_000;
+  let timers = [];
+  return {
+    now: () => t,
+    setTimeout: (fn, ms) => { const h = { fn, at: t + ms }; timers.push(h); return h; },
+    clearTimeout: (h) => { timers = timers.filter((x) => x !== h); },
+    advance(ms) {
+      t += ms;
+      for (;;) {
+        const due = timers.filter((x) => x.at <= t).sort((a, b) => a.at - b.at)[0];
+        if (!due) break;
+        timers = timers.filter((x) => x !== due);
+        due.fn();
+      }
+    },
+  };
+}
+
+function setup(settings = { rounds: 5, timeLimit: 30 }) {
+  const clock = fakeClock();
+  const lobby = new Lobby({ id: 'L1', hostId: 'a', settings, countries, clock, random: () => 0.3 });
+  lobby.addPlayer({ id: 'a', name: 'Anna' });
+  lobby.addPlayer({ id: 'b', name: 'Ben' });
+  return { lobby, clock };
+}
+
+test('sanitizeSettings rejects unknown values', () => {
+  assert.deepEqual(sanitizeSettings({ difficulty: 'leicht', timeLimit: 45, rounds: 15 }),
+    { difficulty: 'mittel', timeLimit: 30, rounds: 15 });
+});
+
+test('only host can start the game', () => {
+  const { lobby } = setup();
+  assert.equal(lobby.start('b'), false);
+  assert.equal(lobby.start('a'), true);
+  assert.equal(lobby.phase, 'question');
+});
+
+test('round ends when all connected players guessed', () => {
+  const { lobby } = setup();
+  lobby.start('a');
+  const target = lobby.round.target.i;
+  lobby.guess('a', target);
+  assert.equal(lobby.phase, 'question');
+  lobby.guess('b', 0);
+  assert.equal(lobby.phase, 'reveal');
+  assert.equal(lobby.players.get('a').score, 1100);
+  assert.equal(lobby.round.results[0].id, 'a');
+  assert.ok(lobby.round.results.every((r) => typeof r.comment === 'string' && r.comment.length > 5));
+});
+
+test('round ends on timeout and missing players get 0', () => {
+  const { lobby, clock } = setup();
+  lobby.start('a');
+  lobby.guess('a', lobby.round.target.i);
+  clock.advance(30_000);
+  assert.equal(lobby.phase, 'reveal');
+  const ben = lobby.round.results.find((r) => r.id === 'b');
+  assert.deepEqual([ben.points, ben.category], [0, 'none']);
+});
+
+test('disconnected players are not waited for', () => {
+  const { lobby } = setup();
+  lobby.start('a');
+  lobby.setConnected('b', false);
+  lobby.guess('a', 5);
+  assert.equal(lobby.phase, 'reveal');
+});
+
+test('second guess is rejected', () => {
+  const { lobby } = setup();
+  lobby.addPlayer({ id: 'c', name: 'Cem' });
+  lobby.start('a');
+  assert.equal(lobby.guess('a', 5), true);
+  assert.equal(lobby.guess('a', 6), false);
+});
+
+test('game runs all rounds then shows final with comments', () => {
+  const { lobby, clock } = setup({ rounds: 5 });
+  lobby.start('a');
+  const targets = new Set();
+  for (let r = 0; r < 5; r++) {
+    targets.add(lobby.round.target.i);
+    lobby.guess('a', lobby.round.target.i);
+    lobby.guess('b', 0);
+    if (r < 4) clock.advance(REVEAL_MS);
+  }
+  assert.equal(targets.size, 5);
+  lobby.next('a');
+  assert.equal(lobby.phase, 'final');
+  assert.match(lobby.finalComments.winner, /Anna/);
+  assert.match(lobby.finalComments.loser, /Ben/);
+  assert.equal(lobby.backToLobby('a'), true);
+  assert.equal(lobby.players.get('a').score, 0);
+});
+
+test('host is transferred after grace period', () => {
+  const { lobby, clock } = setup();
+  lobby.setConnected('a', false);
+  clock.advance(HOST_GRACE_MS - 1);
+  assert.equal(lobby.hostId, 'a');
+  clock.advance(1);
+  assert.equal(lobby.hostId, 'b');
+});
+
+test('host reconnecting within grace keeps host role', () => {
+  const { lobby, clock } = setup();
+  lobby.setConnected('a', false);
+  clock.advance(5_000);
+  lobby.setConnected('a', true);
+  clock.advance(HOST_GRACE_MS);
+  assert.equal(lobby.hostId, 'a');
+});
+
+test('lobbyView hides other guesses during question', () => {
+  const { lobby } = setup();
+  lobby.start('a');
+  lobby.guess('a', 7);
+  const viewB = lobbyView(lobby, 'b');
+  assert.equal(viewB.question.myGuess, null);
+  assert.equal(viewB.players.find((p) => p.id === 'a').answered, true);
+  assert.ok(!JSON.stringify(viewB).includes('"guess"'));
+  assert.equal(typeof viewB.question.target, 'string');
+  assert.ok(viewB.question.remainingMs <= 30_000);
+});
+
+test('late joiner can participate in running game', () => {
+  const { lobby } = setup();
+  lobby.start('a');
+  assert.equal(lobby.addPlayer({ id: 'c', name: 'Cem' }), true);
+  lobby.guess('a', 1);
+  lobby.guess('b', 1);
+  assert.equal(lobby.phase, 'question');
+  lobby.guess('c', 1);
+  assert.equal(lobby.phase, 'reveal');
+});
