@@ -7,4 +7,6 @@
 | Europäische Großstädte (Einwohner, Koordinaten) | [GeoNames](https://www.geonames.org/) cities15000 | CC BY 4.0 – © GeoNames |
 | Länderflaggen | [flag-icons](https://github.com/lipis/flag-icons) | MIT |
 | Flaggen der Bundesländer | [Wikimedia Commons](https://commons.wikimedia.org/) | Amtliche Werke, gemeinfrei (§ 5 UrhG) |
+| Flaggen der US-Bundesstaaten | [Wikimedia Commons](https://commons.wikimedia.org/) | Gemeinfrei |
+| US-Bundesstaaten, Grenzen | Natural Earth 1:10m Admin-1 | Public Domain |
 | Schriften | Bricolage Grotesque, Instrument Serif (über Fontsource) | SIL Open Font License 1.1 |

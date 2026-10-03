@@ -7,6 +7,7 @@ import { MODES, PROMPTS, mapConfig } from './modes.js';
 const MISS_QUIPS = {
   area: ['Das ist Wasser.', 'Ozean. Nicht wählbar, auch wenn er sich schön anfühlt.', 'Da schwimmen nur Fische.'],
   germany: ['Das gehört nicht zu Deutschland.', 'Ausland. Schön dort, aber nicht gefragt.', 'Da ist kein Bundesland. Nur Nachbarn.'],
+  usa: ['Das gehört nicht zu den USA.', 'Kanada und Mexiko zählen nicht. Noch nicht.', 'Kein Bundesstaat. Nur Nachbarn mit Grenzzaun.'],
   point: ['Da ist keine Stadt. Tipp näher an einen Punkt.', 'Kein Punkt in Reichweite – reinzoomen hilft.', 'Nur Feld, Wald und Wiese.'],
 };
 
@@ -126,7 +127,7 @@ export function createGame(app, map) {
     if (!l || app.lobby?.roundKey !== l.roundKey || app.lobby.phase !== 'question' || l.question.myGuess != null) return;
     if (i == null) {
       const mode = MODES[l.settings.mode] ?? MODES.welt;
-      const quips = MISS_QUIPS[mode.kind === 'point' ? 'point' : mode.map === 'germany' ? 'germany' : 'area'];
+      const quips = MISS_QUIPS[mode.kind === 'point' ? 'point' : MISS_QUIPS[mode.map] ? mode.map : 'area'];
       toast(quips[Math.floor(Math.random() * quips.length)]);
       return;
     }

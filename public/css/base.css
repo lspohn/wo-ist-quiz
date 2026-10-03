@@ -195,3 +195,4 @@ body[data-phase='question'] .toast, body[data-phase='reveal'] .toast { bottom: a
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+.inset-frame { fill: #0e2235; stroke: rgba(232, 185, 74, 0.45); stroke-width: 1; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }

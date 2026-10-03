@@ -12,7 +12,8 @@ export function loadGameData() {
   const deStates = prepare(readData('de-states.json'));
   const deCities = readData('de-cities.json').map((c) => ({ ...c, rad: toRad(c) }));
   const euCities = readData('eu-cities.json').map((c) => ({ ...c, rad: toRad(c) }));
-  return { world, deStates, deCities, euCities };
+  const usStates = prepare(readData('us-states.json'));
+  return { world, deStates, deCities, euCities, usStates };
 }
 
 function toRad(c) {
@@ -24,6 +25,7 @@ function toRad(c) {
 export function answerSpace(data, mode) {
   switch (mode) {
     case 'deutschland': return data.deStates;
+    case 'usa': return data.usStates;
     case 'de-staedte': return data.deCities;
     case 'europa-staedte': return data.euCities;
     default: return data.world;
@@ -49,6 +51,12 @@ export function questionPool(data, mode, level) {
         .map((s) => ({ key: `c${s.i}`, answer: s.i, subject: s.capital, prompt: 'capital-state' }));
       return [...data.deStates.map(where), ...capitalQs];
     }
+    case 'usa': {
+      const states = data.usStates.filter((s) => s.target);
+      if (level === 'mittel') return states.map(where);
+      const capitalQs = states.map((s) => ({ key: `c${s.i}`, answer: s.i, subject: s.capital, prompt: 'capital-usstate' }));
+      return [...states.map(where), ...capitalQs];
+    }
     case 'de-staedte':
     case 'europa-staedte': {
       const maxTier = MODES[mode].levels[level].maxTier;
@@ -70,7 +78,8 @@ export function tierOf(mode, city) {
 export function targetSubline(data, mode, question) {
   const items = answerSpace(data, mode);
   const t = items[question.answer];
-  if (question.prompt === 'capital-country' || question.prompt === 'capital-state') return `Hauptstadt: ${question.subject}`;
+  if (question.prompt.startsWith('capital-')) return `Hauptstadt: ${question.subject}`;
+  if (mode === 'usa') return t.capital ? `Hauptstadt: ${t.capital}` : 'Bundesdistrikt';
   if (mode === 'de-staedte') return `${t.state} · ${t.pop.toLocaleString('de-DE')} Einw.`;
   if (mode === 'europa-staedte') return `${t.country}${t.capital ? ' · Hauptstadt' : ''}`;
   if (mode === 'deutschland') return t.capital === t.name ? 'Stadtstaat' : `Hauptstadt: ${t.capital}`;
@@ -92,6 +101,7 @@ export function flagOf(mode, item) {
   if (!item) return null;
   if (mode === 'deutschland') return STATE_FLAGS[item.name] ?? null;
   if (mode === 'de-staedte') return STATE_FLAGS[item.state] ?? null;
+  if (mode === 'usa') return item.target ? `us-${item.postal.toLowerCase()}` : null;
   return item.iso && item.iso !== '-99' ? item.iso.toLowerCase() : null;
 }
 
@@ -110,19 +120,20 @@ export function questionFlag(mode, question, item) {
 export function scoreForMode(mode, target, guess, timeFraction) {
   const cfg = MODES[mode];
   if (cfg.kind === 'point') return scorePoint(target, guess, timeFraction, cfg.scaleKm);
-  if (mode === 'deutschland') return scoreState(target, guess, timeFraction);
+  if (mode === 'deutschland') return scoreState(target, guess, timeFraction, { scaleKm: 120, prefix: 'de' });
+  if (mode === 'usa') return scoreState(target, guess, timeFraction, { scaleKm: 450, prefix: 'us' });
   const result = scoreGuess(target, guess, timeFraction);
   if (mode === 'europa' && ['continent', 'far', 'veryfar'].includes(result.category)) return { ...result, category: 'eu_far' };
   return result;
 }
 
-// Bundesländer: Nachbar 500, sonst schneller Abfall – Deutschland ist klein
-function scoreState(target, guess, timeFraction) {
+// Bundesländer/-staaten: Nachbar 500, sonst Abfall mit landesüblicher Skala
+function scoreState(target, guess, timeFraction, { scaleKm, prefix }) {
   const r = scoreGuess(target, guess, timeFraction);
   if (r.category === 'exact' || r.category === 'none') return r;
-  if (r.category === 'neighbor') return { ...r, category: 'de_neighbor' };
+  if (r.category === 'neighbor') return { ...r, category: `${prefix}_neighbor` };
   const km = Math.round(borderDistanceKm(target, guess));
-  return { points: Math.round(400 * Math.exp(-km / 120)), km, category: 'de_far' };
+  return { points: Math.round(400 * Math.exp(-km / scaleKm)), km, category: `${prefix}_far` };
 }
 
 function scorePoint(target, guess, timeFraction, scaleKm) {

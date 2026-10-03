@@ -46,6 +46,16 @@ export const MODES = {
       schwer: { label: 'Schwer', hint: 'Länder plus: „Von welchem Bundesland ist Stuttgart die Hauptstadt?“' },
     },
   },
+  usa: {
+    label: 'USA',
+    blurb: 'Bundesstaaten & Hauptstädte',
+    map: 'usa',
+    kind: 'area',
+    levels: {
+      mittel: { label: 'Mittel', hint: 'Die 50 Bundesstaaten.' },
+      schwer: { label: 'Schwer', hint: 'Staaten plus: „Von welchem Bundesstaat ist Sacramento die Hauptstadt?“' },
+    },
+  },
   'de-staedte': {
     label: 'Deutschland · Städte',
     blurb: 'Stadt auf der Karte finden',
@@ -80,4 +90,5 @@ export const PROMPTS = {
   where: 'Wo liegt',
   'capital-country': 'Hauptstadt von welchem Land?',
   'capital-state': 'Hauptstadt von welchem Bundesland?',
+  'capital-usstate': 'Hauptstadt von welchem Bundesstaat?',
 };

@@ -79,3 +79,18 @@ test('disputed states carry a recognition note', () => {
   assert.equal(noteOf(data.world.find((c) => c.iso === 'DE' && c.target)), null);
   assert.ok(noteOf(data.euCities.find((c) => c.name === 'Pristina')));
 });
+
+test('usa mode: 50 states, capital questions, own scale and flags', () => {
+  const us = (p) => data.usStates.find((s) => s.postal === p);
+  assert.equal(questionPool(data, 'usa', 'mittel').length, 50);
+  assert.equal(questionPool(data, 'usa', 'schwer').length, 100);
+  const q = questionPool(data, 'usa', 'schwer').find((x) => x.subject === 'Sacramento');
+  assert.equal(data.usStates[q.answer].name, 'Kalifornien');
+  assert.equal(scoreForMode('usa', us('CO'), us('UT')).category, 'us_neighbor');
+  const far = scoreForMode('usa', us('CA'), us('ME'));
+  assert.equal(far.category, 'us_far');
+  assert.ok(far.points < 5, `pts=${far.points}`);
+  assert.equal(flagOf('usa', us('TX')), 'us-tx');
+  assert.equal(flagOf('usa', us('DC')), null);
+  assert.ok(!questionPool(data, 'usa', 'mittel').some((x) => x.subject === 'Washington, D.C.'));
+});

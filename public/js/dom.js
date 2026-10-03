@@ -56,6 +56,8 @@ export const CATEGORY_LABEL = {
   none: 'Keine Antwort',
   de_neighbor: 'Nachbarland',
   de_far: 'Daneben',
+  us_neighbor: 'Nachbarstaat',
+  us_far: 'Daneben',
   eu_far: 'Falsche Ecke Europas',
   p_close: 'Knapp daneben',
   p_near: 'In der Gegend',

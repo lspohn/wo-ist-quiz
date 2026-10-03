@@ -31,7 +31,7 @@ test('categories without distance do not reference km', () => {
 });
 
 test('every category the modes can produce has comments', () => {
-  for (const cat of ['exact', 'neighbor', 'close', 'continent', 'far', 'veryfar', 'none', 'de_neighbor', 'de_far', 'eu_far', 'p_close', 'p_near', 'p_far', 'p_veryfar', 'winner', 'middle', 'loser', 'solo']) {
+  for (const cat of ['exact', 'neighbor', 'close', 'continent', 'far', 'veryfar', 'none', 'de_neighbor', 'de_far', 'us_neighbor', 'us_far', 'eu_far', 'p_close', 'p_near', 'p_far', 'p_veryfar', 'winner', 'middle', 'loser', 'solo']) {
     assert.ok(COMMENTS[cat]?.length >= 10, cat);
   }
 });

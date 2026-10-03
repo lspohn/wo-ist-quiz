@@ -25,11 +25,11 @@ function fetchJson(url) {
 
 /** Normalised dataset: { w, h, areas, views, decor, cities } */
 export async function loadDataset(name) {
-  if (name === 'germany') {
-    const g = await fetchJson('/data/germany.json');
+  if (name === 'germany' || name === 'usa') {
+    const g = await fetchJson(`/data/${name}.json`);
     return {
       name, w: g.w, h: g.h, views: {}, areas: g.states, cities: g.cities,
-      decor: { context: g.context, rivers: g.rivers, lakes: g.lakes },
+      decor: { context: g.context, rivers: g.rivers, lakes: g.lakes, insets: g.insets },
     };
   }
   const m = await fetchJson('/data/map.json');
@@ -53,6 +53,8 @@ export function buildAreaLayers(world, ds) {
     for (const d of decor.context) ctx.append(svgEl('path', { d }));
     world.append(ctx);
   }
+  // Einschübe (Alaska/Hawaii) mit Meeresfläche hinterlegen, über Kontext und Flüssen
+  const insets = svgEl('g', { class: 'insets' });
   const land = svgEl('g', { class: 'land' });
   const dots = svgEl('g', { class: 'dots' });
   const overlayLines = svgEl('g', { class: 'waters' });
@@ -76,8 +78,9 @@ export function buildAreaLayers(world, ds) {
   }
   if (decor.lakes) for (const d of decor.lakes) overlayLines.append(svgEl('path', { d, class: 'lake' }));
   if (decor.rivers) for (const r of decor.rivers) overlayLines.append(svgEl('path', { d: r.d, class: `river r${r.r}` }));
+  if (decor.insets) for (const d of decor.insets) insets.append(svgEl('path', { d, class: 'inset-frame' }));
   const cities = svgEl('g', { class: 'cities' });
-  world.append(land, overlayLines, dots, cities);
+  world.append(insets, land, overlayLines, dots, cities);
   return { land, dots, waters: overlayLines, cities, els, byIndex, dotEls };
 }
 

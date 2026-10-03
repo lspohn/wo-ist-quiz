@@ -132,7 +132,7 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
     const right = inset.right ?? 30;
     const aw = Math.max(80, W - left - right);
     const ah = Math.max(80, H - top - bottom);
-    const minSpan = ds.name === 'germany' ? 60 : 90;
+    const minSpan = ds.name === 'world' ? 90 : 60;
     const bw = Math.max(b[2] - b[0], minSpan);
     const bh = Math.max(b[3] - b[1], minSpan * 0.66);
     const k = clampK(Math.min(aw / bw, ah / bh) * 0.86);
@@ -193,7 +193,7 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
         kind = cfg.kind;
         viewBox = cfg.view ? ds.views[cfg.view] : null;
         svg.classList.toggle('point-mode', kind === 'point');
-        svg.classList.toggle('germany', ds.name === 'germany');
+        svg.classList.toggle('regional', ds.name !== 'world');
         point = buildPointLayer(layers, { rivers: extras.rivers, cities: extras.cities, maxTier: cfg.maxTier });
         radiusK = 0;
         api.clearAll();

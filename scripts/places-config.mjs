@@ -70,3 +70,21 @@ export const EUROPE_BIG_CITIES = {
   FI: ['Tampere'],
   HR: ['Split'],
 };
+
+// USA: Hauptstädte der Bundesstaaten (Postkürzel → Hauptstadt)
+export const US_CAPITALS = {
+  AL: 'Montgomery', AK: 'Juneau', AZ: 'Phoenix', AR: 'Little Rock', CA: 'Sacramento', CO: 'Denver',
+  CT: 'Hartford', DE: 'Dover', FL: 'Tallahassee', GA: 'Atlanta', HI: 'Honolulu', ID: 'Boise',
+  IL: 'Springfield', IN: 'Indianapolis', IA: 'Des Moines', KS: 'Topeka', KY: 'Frankfort', LA: 'Baton Rouge',
+  ME: 'Augusta', MD: 'Annapolis', MA: 'Boston', MI: 'Lansing', MN: 'Saint Paul', MS: 'Jackson',
+  MO: 'Jefferson City', MT: 'Helena', NE: 'Lincoln', NV: 'Carson City', NH: 'Concord', NJ: 'Trenton',
+  NM: 'Santa Fe', NY: 'Albany', NC: 'Raleigh', ND: 'Bismarck', OH: 'Columbus', OK: 'Oklahoma City',
+  OR: 'Salem', PA: 'Harrisburg', RI: 'Providence', SC: 'Columbia', SD: 'Pierre', TN: 'Nashville',
+  TX: 'Austin', UT: 'Salt Lake City', VT: 'Montpelier', VA: 'Richmond', WA: 'Olympia', WV: 'Charleston',
+  WI: 'Madison', WY: 'Cheyenne',
+};
+
+// Natural Earth nennt D.C. auf Deutsch „Washington“ – kollidiert mit dem Bundesstaat
+export const US_NAME_OVERRIDES = {
+  DC: 'Washington, D.C.',
+};
