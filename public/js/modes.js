@@ -66,7 +66,7 @@ export const MODE_IDS = Object.keys(MODES);
 /** Valid difficulty for a mode (falls back to the first level). */
 export function levelOf(mode, difficulty) {
   const levels = MODES[mode]?.levels ?? MODES.welt.levels;
-  return difficulty in levels ? difficulty : Object.keys(levels)[0];
+  return typeof difficulty === 'string' && Object.hasOwn(levels, difficulty) ? difficulty : Object.keys(levels)[0];
 }
 
 /** Map configuration for the client map. */

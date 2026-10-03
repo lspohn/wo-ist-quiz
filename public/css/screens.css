@@ -146,4 +146,5 @@
 .mode-label { font-family: var(--display); font-size: 1.35rem; line-height: 1.05; }
 .mode-blurb { font-size: 0.78rem; color: var(--muted); }
 .chip-mode { background: rgba(46, 230, 166, 0.16); color: var(--mint); }
-.hs-modes { flex-wrap: wrap; border-radius: 18px; }
+.hs-tabgroup { flex-wrap: wrap; max-width: 100%; }
+.hs-modes { flex-basis: 100%; border-radius: 18px; }

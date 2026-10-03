@@ -20,6 +20,7 @@ export function createGame(app, map) {
   let ticker = null;
   let autoNextAt = 0;
   let latest = null;
+  let shown = null;
 
   function sheetInset() {
     const landscape = innerWidth > innerHeight && innerHeight < 560;
@@ -97,15 +98,17 @@ export function createGame(app, map) {
     );
   }
 
-  function question(l, fresh) {
+  function question(l, fresh, receivedAt) {
     const q = l.question;
+    shown = l;
     if (fresh) {
       candidate = null;
       map.resetGestures();
       map.clearAll();
       map.fitAll();
     }
-    deadline = performance.now() + q.remainingMs;
+    // Zeit ab Empfang rechnen – Kartenladezeit darf die Uhr nicht verlängern
+    deadline = receivedAt + q.remainingMs;
     limitMs = q.limitMs;
     map.setInteractive(q.myGuess == null);
     if (q.myGuess != null) map.setLocked(q.myGuess);
@@ -115,8 +118,9 @@ export function createGame(app, map) {
   }
 
   function onLongPress(i) {
-    const l = app.lobby;
-    if (l?.phase !== 'question' || l.question.myGuess != null) return;
+    // nur auf die tatsächlich angezeigte Runde reagieren (nicht während eines Kartenwechsels)
+    const l = shown;
+    if (!l || app.lobby?.roundKey !== l.roundKey || app.lobby.phase !== 'question' || l.question.myGuess != null) return;
     if (i == null) {
       const mode = MODES[l.settings.mode] ?? MODES.welt;
       const quips = MISS_QUIPS[mode.kind === 'point' ? 'point' : mode.map === 'germany' ? 'germany' : 'area'];
@@ -129,8 +133,9 @@ export function createGame(app, map) {
     renderPickSheet(l, l.question);
   }
 
-  function reveal(l, fresh) {
-    autoNextAt = performance.now() + l.reveal.autoNextMs;
+  function reveal(l, fresh, receivedAt) {
+    shown = null;
+    autoNextAt = receivedAt + l.reveal.autoNextMs;
     renderRevealPanel({ l, hud, sheet, app });
     startTicker();
     if (!fresh) return;
@@ -144,18 +149,24 @@ export function createGame(app, map) {
   return {
     render(l) {
       latest = l;
+      const receivedAt = performance.now();
+      if (roundKey?.split(':')[1] !== l.roundKey) shown = null;
       // Karte erst auf die Variante umstellen (lädt ggf. Daten), dann zeichnen
       map.use(mapConfig(l.settings)).then(() => {
         if (latest !== l) return;
         const key = `${l.id}:${l.roundKey}:${l.phase}`;
         const fresh = key !== roundKey;
         roundKey = key;
-        if (l.phase === 'question') question(l, fresh);
-        else if (l.phase === 'reveal') reveal(l, fresh);
+        if (l.phase === 'question') question(l, fresh, receivedAt);
+        else if (l.phase === 'reveal') reveal(l, fresh, receivedAt);
+      }).catch(() => {
+        toast('Karte konnte nicht geladen werden – neuer Versuch …', 1800);
+        setTimeout(() => { if (latest === l) this.render(l); }, 2000);
       });
     },
     hide() {
       latest = null;
+      shown = null;
       clearInterval(ticker);
       hud.hidden = true;
       sheet.hidden = true;

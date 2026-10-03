@@ -251,3 +251,16 @@ test('final comments do not repeat across games in one lobby', () => {
   }
   assert.equal(new Set(seen).size, 6);
 });
+
+test('prototype property names are not accepted as difficulty', () => {
+  for (const bad of ['constructor', 'toString', '__proto__', 42]) {
+    assert.equal(sanitizeSettings({ mode: 'de-staedte', difficulty: bad }).difficulty, 'mittel', String(bad));
+  }
+});
+
+test('start refuses when the question pool is empty', () => {
+  const { lobby } = setup();
+  lobby.settings = { ...lobby.settings, difficulty: 'gibtsnicht' };
+  assert.equal(lobby.start('a'), false);
+  assert.equal(lobby.phase, 'lobby');
+});

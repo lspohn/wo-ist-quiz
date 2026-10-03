@@ -49,9 +49,16 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
     s.y = Math.min(H - padY, Math.max(padY - mh, s.y));
   }
 
+  let radiusK = 0;
   function apply() {
     world.setAttribute('transform', `translate(${s.x.toFixed(2)} ${s.y.toFixed(2)}) scale(${s.k.toFixed(4)})`);
     overlay.place();
+    // Stadtpunkte auch während Pinch/Animation in fester Bildschirmgröße halten
+    if (point.points.length && s.k !== radiusK) {
+      radiusK = s.k;
+      const inv = 1 / s.k;
+      for (const c of point.points) point.pointEls.get(c.i).setAttribute('r', CITY_RADIUS[c.t] * inv);
+    }
   }
 
   // Punkte behalten auf dem Bildschirm eine feste Größe
@@ -167,10 +174,17 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
       configKey = key;
       using = (async () => {
         // Daten zuerst laden, dann nur anwenden, wenn inzwischen nichts anderes gewählt wurde
-        const next = await loadDataset(cfg.map);
-        const extras = cfg.kind === 'point'
-          ? (cfg.points === 'europe' ? await loadEuropeExtras() : { cities: next.cities, rivers: null })
-          : { cities: [], rivers: null };
+        let next;
+        let extras;
+        try {
+          next = await loadDataset(cfg.map);
+          extras = cfg.kind === 'point'
+            ? (cfg.points === 'europe' ? await loadEuropeExtras() : { cities: next.cities, rivers: null })
+            : { cities: [], rivers: null };
+        } catch (err) {
+          if (configKey === key) configKey = '';
+          throw err;
+        }
         if (configKey !== key) return;
         if (ds?.name !== next.name) {
           ds = next;
@@ -181,6 +195,7 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
         svg.classList.toggle('point-mode', kind === 'point');
         svg.classList.toggle('germany', ds.name === 'germany');
         point = buildPointLayer(layers, { rivers: extras.rivers, cities: extras.cities, maxTier: cfg.maxTier });
+        radiusK = 0;
         api.clearAll();
         fitAll();
       })();

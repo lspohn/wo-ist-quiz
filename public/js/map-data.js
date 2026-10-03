@@ -11,7 +11,15 @@ export const svgEl = (tag, attrs = {}) => {
 };
 
 function fetchJson(url) {
-  if (!cache.has(url)) cache.set(url, fetch(url).then((r) => r.json()));
+  if (!cache.has(url)) {
+    const p = fetch(url).then((r) => {
+      if (!r.ok) throw new Error(`${url}: ${r.status}`);
+      return r.json();
+    });
+    // Fehlschläge nicht cachen, damit ein neuer Versuch möglich ist
+    p.catch(() => cache.delete(url));
+    cache.set(url, p);
+  }
   return cache.get(url);
 }
 

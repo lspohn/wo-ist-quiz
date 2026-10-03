@@ -67,6 +67,16 @@ export class Lobby {
     return key !== undefined && key !== this.roundKey;
   }
 
+  hasQuestions() {
+    const { mode, difficulty } = this.settings;
+    if (levelOf(mode, difficulty) !== difficulty) return false;
+    try {
+      return questionPool(this.data, mode, difficulty).length > 0;
+    } catch {
+      return false;
+    }
+  }
+
   /** Items that guesses index into for the current mode. */
   get answers() {
     return answerSpace(this.data, this.settings.mode);
@@ -139,6 +149,7 @@ export class Lobby {
 
   start(byId) {
     if (byId !== this.hostId || (this.phase !== 'lobby' && this.phase !== 'final')) return false;
+    if (!this.hasQuestions()) return false;
     for (const p of this.players.values()) p.score = 0;
     this.roundNo = 0;
     this.gameNo += 1;

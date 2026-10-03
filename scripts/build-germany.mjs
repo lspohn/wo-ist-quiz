@@ -1,6 +1,7 @@
 // Baut die Deutschland-Karte (Bundesländer, Nachbarländer als Kontext, Flüsse, Seen, Städte)
 // sowie die Serverdaten für die Varianten „Deutschland“ und „Deutschland-Städte“.
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { geoArea, geoConicConformal, geoContains, geoDistance, geoPath } from 'd3-geo';
 import mapshaper from 'mapshaper';
@@ -8,6 +9,16 @@ import { STATE_CAPITALS } from './places-config.mjs';
 
 const file = (rel) => fileURLToPath(new URL(rel, import.meta.url));
 const load = (name) => JSON.parse(readFileSync(file(`../.cache/${name}.geojson`), 'utf8'));
+const NE = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson';
+const SOURCES = { ne10: 'ne_10m_admin_0_countries' };
+for (const name of ['ne10', 'ne_10m_admin_1_states_provinces', 'ne_10m_rivers_lake_centerlines', 'ne_10m_rivers_europe', 'ne_10m_lakes', 'ne_10m_lakes_europe']) {
+  const target = file(`../.cache/${name}.geojson`);
+  if (existsSync(target)) continue;
+  mkdirSync(dirname(target), { recursive: true });
+  const res = await fetch(`${NE}/${SOURCES[name] ?? name}.geojson`);
+  if (!res.ok) throw new Error(`Download ${name} fehlgeschlagen: ${res.status}`);
+  writeFileSync(target, await res.text());
+}
 const WIDTH = 1000;
 const PAD = 70;
 const CLIP = [3.2, 45.6, 17.8, 56.4];

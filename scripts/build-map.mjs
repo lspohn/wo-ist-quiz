@@ -165,7 +165,9 @@ const views = {
     Math.round(Math.max(...euView.map((p) => p[0]))), Math.round(Math.max(...euView.map((p) => p[1]))),
   ],
 };
-const euRiversRaw = JSON.parse(readFileSync(fileURLToPath(new URL('../.cache/ne_10m_rivers_lake_centerlines.geojson', import.meta.url)), 'utf8'))
+const RIVERS = fileURLToPath(new URL('../.cache/ne_10m_rivers_lake_centerlines.geojson', import.meta.url));
+if (!existsSync(RIVERS)) writeFileSync(RIVERS, await (await fetch(SRC_URL.replace(/ne_\w+_admin_0_countries/, 'ne_10m_rivers_lake_centerlines'))).text());
+const euRiversRaw = JSON.parse(readFileSync(RIVERS, 'utf8'))
   .features.filter((f) => f.geometry && (f.properties.scalerank ?? 10) <= 7);
 const euRiversOut = await mapshaper.applyCommands(
   `-i in.json -clip bbox=${EU_BOX.join(',')} -simplify 30% planar -o out.json format=geojson`,
