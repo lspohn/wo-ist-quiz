@@ -16,8 +16,8 @@ export function cleanName(input) {
 
 /** Routes socket messages to players and lobbies. Transport-agnostic for tests. */
 export class Hub {
-  constructor({ countries, clock, random, highscores = null } = {}) {
-    this.countries = countries;
+  constructor({ data, clock, random, highscores = null } = {}) {
+    this.data = data;
     this.highscores = highscores;
     this.clock = clock;
     this.random = random;
@@ -99,7 +99,7 @@ export class Hub {
       id: newId(3),
       hostId: player.id,
       settings: sanitizeSettings(settings),
-      countries: this.countries,
+      data: this.data,
       clock: this.clock,
       random: this.random,
       onChange: (l) => this.broadcast(l),

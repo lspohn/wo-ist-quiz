@@ -38,4 +38,11 @@ export const CATEGORY_LABEL = {
   far: 'Falscher Kontinent',
   veryfar: 'Weit, weit weg',
   none: 'Keine Antwort',
+  de_neighbor: 'Nachbarland',
+  de_far: 'Daneben',
+  eu_far: 'Falsche Ecke Europas',
+  p_close: 'Knapp daneben',
+  p_near: 'In der Gegend',
+  p_far: 'Weit daneben',
+  p_veryfar: 'Weit, weit weg',
 };

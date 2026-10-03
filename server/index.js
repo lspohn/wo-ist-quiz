@@ -4,7 +4,7 @@ import { extname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { WebSocketServer } from 'ws';
-import { loadCountries } from './geo.js';
+import { loadGameData } from './modes.js';
 import { Highscores } from './highscores.js';
 import { Hub } from './hub.js';
 
@@ -40,7 +40,7 @@ function loadStatic(dir) {
 
 const files = loadStatic(PUBLIC_DIR);
 const highscores = new Highscores(join(DATA_DIR, 'highscores.json'));
-const hub = new Hub({ countries: loadCountries(), highscores });
+const hub = new Hub({ data: loadGameData(), highscores });
 
 function pathOf(rawUrl) {
   try { return new URL(rawUrl, 'http://x').pathname; } catch { return null; }

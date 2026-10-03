@@ -1,9 +1,9 @@
 // Bestenliste: Tabs pro Schwierigkeit und Rundenzahl, Daten per HTTP.
 import { h, fmt } from './dom.js';
+import { MODES, MODE_IDS, levelOf } from './modes.js';
 
-const DIFFS = [['mittel', 'Mittel'], ['schwer', 'Schwer']];
 const ROUNDS = [5, 10, 15];
-let selected = { difficulty: 'mittel', rounds: 10 };
+let selected = { mode: 'welt', difficulty: 'mittel', rounds: 10 };
 let cache = null;
 
 async function load() {
@@ -33,7 +33,7 @@ function rows(list, highlight) {
  * and `highlight` marks the player's fresh rank.
  */
 export function highscorePanel({ fixed = null, highlight = null } = {}) {
-  if (fixed) selected = { difficulty: fixed.difficulty, rounds: fixed.rounds };
+  if (fixed) selected = { mode: fixed.mode ?? 'welt', difficulty: fixed.difficulty, rounds: fixed.rounds };
   const list = h('ol.hs-list', {});
   const tabs = h('div.hs-tabs', {});
   const panel = h('section.highscores', {},
@@ -43,12 +43,14 @@ export function highscorePanel({ fixed = null, highlight = null } = {}) {
   );
 
   const fill = () => {
-    const key = `${selected.difficulty}-${selected.rounds}`;
+    selected.difficulty = levelOf(selected.mode, selected.difficulty);
+    const key = `${selected.mode}-${selected.difficulty}-${selected.rounds}`;
     list.replaceChildren(...rows(cache?.[key] ?? [], fixed ? highlight : null));
     if (fixed) return;
     const tab = (label, active, onclick) => h('button.hs-tab', { 'aria-pressed': String(active), onclick }, label);
     tabs.replaceChildren(
-      h('div.hs-tabgroup', {}, DIFFS.map(([v, label]) => tab(label, selected.difficulty === v, () => { selected.difficulty = v; fill(); }))),
+      h('div.hs-tabgroup.hs-modes', {}, MODE_IDS.map((m) => tab(MODES[m].label, selected.mode === m, () => { selected.mode = m; fill(); }))),
+      h('div.hs-tabgroup', {}, Object.entries(MODES[selected.mode].levels).map(([v, lv]) => tab(lv.label, selected.difficulty === v, () => { selected.difficulty = v; fill(); }))),
       h('div.hs-tabgroup', {}, ROUNDS.map((r) => tab(`${r} R.`, selected.rounds === r, () => { selected.rounds = r; fill(); }))),
     );
   };

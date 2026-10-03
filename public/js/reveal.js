@@ -31,7 +31,7 @@ export function renderRevealPanel({ l, hud, sheet, app }) {
   hud.replaceChildren(
     h('div.hud-row', {}, h('span.hud-round', {}, `Runde ${l.roundNo}/${l.settings.rounds} · Auflösung`)),
     h('h2.hud-target.solved', {}, rv.target.name),
-    h('p.hud-ask', {}, rv.target.continent),
+    h('p.hud-ask', {}, rv.target.sub ?? ''),
   );
   sheet.hidden = false;
   sheet.className = `sheet sheet-reveal cat-${mine?.category ?? 'none'}`;
@@ -49,7 +49,7 @@ export function renderRevealPanel({ l, hud, sheet, app }) {
     h('div.sheet-actions', {},
       isHost
         ? h('button.btn.btn-primary.btn-wide', { onclick: () => app.send('next', { key: l.roundKey }) },
-          rv.last ? 'Zum Endstand' : 'Nächstes Land', h('span.auto-next', {}, ''))
+          rv.last ? 'Zum Endstand' : 'Nächste Runde', h('span.auto-next', {}, ''))
         : h('p.waiting', {}, rv.last ? 'Gleich kommt der Endstand · ' : 'Nächste Runde in ', h('span.auto-next', {}, '')),
     ),
   );

@@ -3,6 +3,7 @@ import { createMap } from './map-view.js';
 import { createGame } from './game.js';
 import { homeScreen, roomScreen, finalScreen } from './screens.js';
 import { toast } from './dom.js';
+import { mapConfig } from './modes.js';
 
 const screenEl = document.getElementById('screen');
 const ring = document.getElementById('press-ring');
@@ -89,6 +90,8 @@ function render() {
     return;
   }
   if (lastScreen === 'question' || lastScreen === 'reveal') game.hide();
+  // Hintergrundkarte zeigt die gewählte Variante
+  map.use(mapConfig(l?.settings));
   const focused = document.activeElement?.id;
   const view = phase === 'home' ? homeScreen(app) : phase === 'final' ? finalScreen(app) : roomScreen(app);
   screenEl.hidden = false;

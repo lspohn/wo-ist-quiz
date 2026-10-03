@@ -1,14 +1,14 @@
 import { CommentPicker } from './comments.js';
 import { Deck } from './deck.js';
-import { targetPool } from './geo.js';
-import { scoreGuess } from './scoring.js';
+import { answerSpace, questionPool, scoreForMode, targetSubline } from './modes.js';
+import { MODE_IDS, levelOf } from '../public/js/modes.js';
 
 export const SETTINGS_OPTIONS = {
-  difficulty: ['mittel', 'schwer'],
+  mode: MODE_IDS,
   timeLimit: [20, 40, 60],
   rounds: [5, 10, 15],
 };
-export const DEFAULT_SETTINGS = { difficulty: 'mittel', timeLimit: 40, rounds: 10 };
+export const DEFAULT_SETTINGS = { mode: 'welt', difficulty: 'mittel', timeLimit: 40, rounds: 10 };
 export const MAX_PLAYERS = 12;
 export const REVEAL_MS = 45_000;
 export const HOST_GRACE_MS = 15_000;
@@ -25,18 +25,20 @@ export function sanitizeSettings(input = {}, base = DEFAULT_SETTINGS) {
   for (const [key, allowed] of Object.entries(SETTINGS_OPTIONS)) {
     if (allowed.includes(input[key])) out[key] = input[key];
   }
+  // Schwierigkeit hängt vom Modus ab; ungültige fallen auf die erste Stufe zurück
+  out.difficulty = levelOf(out.mode, input.difficulty ?? out.difficulty);
   return out;
 }
 
 /** One game room: lobby → question ↔ reveal → final. */
 export class Lobby {
   constructor({
-    id, hostId, settings, countries, clock = defaultClock, random = Math.random, onChange = () => {}, onFinish = () => ({}),
+    id, hostId, settings, data, clock = defaultClock, random = Math.random, onChange = () => {}, onFinish = () => ({}),
   }) {
     this.id = id;
     this.hostId = hostId;
     this.settings = sanitizeSettings(settings);
-    this.countries = countries;
+    this.data = data;
     this.clock = clock;
     this.random = random;
     this.onChange = onChange;
@@ -48,7 +50,7 @@ export class Lobby {
     this.roundNo = 0;
     this.gameNo = 0;
     this.gamesPlayed = 0;
-    this.deck = new Deck((d) => targetPool(countries, d), random);
+    this.deck = new Deck((key) => questionPool(data, ...key.split(':')), random);
     this.comments = new CommentPicker(random);
     this.timer = null;
     this.hostTimer = null;
@@ -63,6 +65,11 @@ export class Lobby {
 
   isStale(key) {
     return key !== undefined && key !== this.roundKey;
+  }
+
+  /** Items that guesses index into for the current mode. */
+  get answers() {
+    return answerSpace(this.data, this.settings.mode);
   }
 
   get connectedPlayers() {
@@ -142,11 +149,12 @@ export class Lobby {
 
   startRound() {
     this.clock.clearTimeout(this.timer);
-    const target = this.deck.draw(this.settings.difficulty);
+    const question = this.deck.draw(`${this.settings.mode}:${this.settings.difficulty}`);
+    const target = this.answers[question.answer];
     this.roundNo += 1;
     const now = this.clock.now();
     const limitMs = this.settings.timeLimit * 1000;
-    this.round = { target, startedAt: now, deadline: now + limitMs, limitMs, guesses: new Map(), results: null };
+    this.round = { question, target, startedAt: now, deadline: now + limitMs, limitMs, guesses: new Map(), results: null };
     this.phase = 'question';
     this.timer = this.clock.setTimeout(() => this.endRound(), limitMs);
     this.touch();
@@ -160,8 +168,8 @@ export class Lobby {
     }
     if (this.round.guesses.has(byId)) return false;
     if (!Number.isInteger(countryIndex)) return false;
-    const raw = this.countries[countryIndex];
-    const country = raw?.alias !== undefined ? this.countries[raw.alias] : raw;
+    const raw = this.answers[countryIndex];
+    const country = raw?.alias !== undefined ? this.answers[raw.alias] : raw;
     if (!country) return false;
     this.round.guesses.set(byId, { country, at: this.clock.now() });
     this.checkRoundComplete();
@@ -183,7 +191,7 @@ export class Lobby {
     for (const p of this.players.values()) {
       const g = guesses.get(p.id);
       const fraction = g ? (deadline - g.at) / limitMs : 0;
-      const score = scoreGuess(target, g?.country ?? null, fraction);
+      const score = scoreForMode(this.settings.mode, target, g?.country ?? null, fraction);
       p.score += score.points;
       const vars = { name: p.name, ziel: target.name, tipp: g?.country.name ?? '–', km: formatKm(score.km) };
       results.push({
@@ -196,6 +204,7 @@ export class Lobby {
     }
     results.sort((a, b) => b.points - a.points);
     this.round.results = results;
+    this.round.subline = targetSubline(this.data, this.settings.mode, this.round.question);
     this.phase = 'reveal';
     this.round.revealUntil = this.clock.now() + REVEAL_MS;
     this.timer = this.clock.setTimeout(() => this.advance(), REVEAL_MS);

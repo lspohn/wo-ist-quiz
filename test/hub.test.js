@@ -1,13 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadCountries } from '../server/geo.js';
+import { loadGameData } from '../server/modes.js';
 import { Hub } from '../server/hub.js';
 
-const countries = loadCountries();
+const data = loadGameData();
 const sock = () => ({ readyState: 1, sent: [], send(d) { this.sent.push(JSON.parse(d)); } });
 
 test('repeated hello on one socket does not create ghost players', () => {
-  const hub = new Hub({ countries });
+  const hub = new Hub({ data });
   const s = sock();
   hub.connect(s);
   for (let k = 0; k < 5; k++) {
@@ -24,7 +24,7 @@ test('repeated hello on one socket does not create ghost players', () => {
 
 test('finished game is recorded in highscores', () => {
   const recorded = [];
-  const hub = new Hub({ countries, random: () => 0.5, highscores: { record: (s, players) => { recorded.push([s, players.map((p) => p.name)]); return {}; } } });
+  const hub = new Hub({ data, random: () => 0.5, highscores: { record: (s, players) => { recorded.push([s, players.map((p) => p.name)]); return {}; } } });
   const s = sock();
   hub.handle(s, { type: 'hello', name: 'Solo' });
   hub.handle(s, { type: 'createLobby', settings: { rounds: 5 } });

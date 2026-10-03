@@ -5,7 +5,12 @@ export const MAX_ENTRIES = 10;
 
 /** One board per difficulty and round count – only those scores are comparable. */
 export function boardKey(settings) {
-  return `${settings.difficulty}-${settings.rounds}`;
+  return `${settings.mode ?? 'welt'}-${settings.difficulty}-${settings.rounds}`;
+}
+
+// Alte Schlüssel ohne Modus („mittel-10“) gehören zur Variante Welt
+function migrate(boards) {
+  return Object.fromEntries(Object.entries(boards).map(([k, v]) => [k.split('-').length === 2 ? `welt-${k}` : k, v]));
 }
 
 /** Top-10 lists persisted as one JSON file. */
@@ -16,7 +21,7 @@ export class Highscores {
     this.boards = {};
     try {
       const data = JSON.parse(readFileSync(file, 'utf8'));
-      if (data && typeof data === 'object' && !Array.isArray(data)) this.boards = data;
+      if (data && typeof data === 'object' && !Array.isArray(data)) this.boards = migrate(data);
     } catch (err) {
       if (err.code !== 'ENOENT') console.error('Highscores nicht lesbar, starte leer:', err.message);
     }

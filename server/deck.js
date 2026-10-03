@@ -1,4 +1,4 @@
-/** Shuffled draw pile per difficulty: every country once before any repeats. */
+/** Shuffled draw pile per key (mode + difficulty): every question once before any repeats. */
 export class Deck {
   constructor(poolFor, random = Math.random) {
     this.poolFor = poolFor;
@@ -7,13 +7,14 @@ export class Deck {
     this.last = null;
   }
 
-  draw(difficulty) {
-    let pile = this.piles.get(difficulty);
+  draw(key) {
+    let pile = this.piles.get(key);
     if (!pile?.length) {
-      pile = shuffle([...this.poolFor(difficulty)], this.random);
+      pile = shuffle([...this.poolFor(key)], this.random);
       // nach dem Neumischen nicht direkt dasselbe Land wie zuletzt
-      if (pile.length > 1 && pile[pile.length - 1] === this.last) [pile[0], pile[pile.length - 1]] = [pile[pile.length - 1], pile[0]];
-      this.piles.set(difficulty, pile);
+      const same = (a, b) => a && b && (a.key ?? a) === (b.key ?? b);
+      if (pile.length > 1 && same(pile[pile.length - 1], this.last)) [pile[0], pile[pile.length - 1]] = [pile[pile.length - 1], pile[0]];
+      this.piles.set(key, pile);
     }
     this.last = pile.pop();
     return this.last;

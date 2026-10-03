@@ -1,8 +1,13 @@
 // Frage- und Auflösungsphase: HUD oben, Bestätigen-/Ergebnis-Sheet unten.
 import { h, toast } from './dom.js';
 import { renderRevealPanel, showRevealOnMap } from './reveal.js';
+import { MODES, PROMPTS, mapConfig } from './modes.js';
 
-const WATER_QUIPS = ['Das ist Wasser.', 'Ozean. Nicht wählbar, auch wenn er sich schön anfühlt.', 'Da schwimmen nur Fische.'];
+const MISS_QUIPS = {
+  area: ['Das ist Wasser.', 'Ozean. Nicht wählbar, auch wenn er sich schön anfühlt.', 'Da schwimmen nur Fische.'],
+  germany: ['Das gehört nicht zu Deutschland.', 'Ausland. Schön dort, aber nicht gefragt.', 'Da ist kein Bundesland. Nur Nachbarn.'],
+  point: ['Da ist keine Stadt. Tipp näher an einen Punkt.', 'Kein Punkt in Reichweite – reinzoomen hilft.', 'Nur Feld, Wald und Wiese.'],
+};
 
 /** Game-phase controller bound to the map. */
 export function createGame(app, map) {
@@ -14,6 +19,7 @@ export function createGame(app, map) {
   let limitMs = 1;
   let ticker = null;
   let autoNextAt = 0;
+  let latest = null;
 
   function sheetInset() {
     const landscape = innerWidth > innerHeight && innerHeight < 560;
@@ -48,7 +54,7 @@ export function createGame(app, map) {
         h('span.hud-answered', {}, `${answered}/${l.players.filter((p) => p.connected).length} getippt`),
         h('span.timer-num', {}, Math.ceil(q.remainingMs / 1000)),
       ),
-      h('p.hud-ask', {}, 'Wo liegt'),
+      h('p.hud-ask', {}, PROMPTS[q.prompt] ?? 'Wo liegt'),
       h('h2.hud-target', {}, q.target),
       h('div.timer', {}, h('div.timer-fill', {})),
       h('div.hud-dots', {}, l.players.map((p) => h(`span.hud-dot${p.answered ? '.done' : ''}${p.id === l.you ? '.me' : ''}`, { '--c': p.color },
@@ -67,14 +73,15 @@ export function createGame(app, map) {
       );
       return;
     }
+    const isPoint = MODES[l.settings.mode]?.kind === 'point';
     if (candidate == null) {
       sheet.replaceChildren(
-        h('p.sheet-hint', {}, h('span.hold-icon', {}), h('span', {}, 'Land ', h('strong', {}, 'gedrückt halten'), ', um es zu markieren')),
+        h('p.sheet-hint', {}, h('span.hold-icon', {}), h('span', {}, isPoint ? 'Stadt ' : 'Land ', h('strong', {}, 'gedrückt halten'), isPoint ? ', um sie zu markieren' : ', um es zu markieren')),
       );
       return;
     }
     sheet.replaceChildren(
-      h('p.sheet-title', {}, 'Land markiert'),
+      h('p.sheet-title', {}, MODES[l.settings.mode]?.kind === 'point' ? 'Stadt markiert' : 'Land markiert'),
       h('p.sheet-sub', {}, 'Sicher? Danach gibt es kein Zurück.'),
       h('div.sheet-actions', {},
         h('button.btn.btn-ghost', { onclick: () => { candidate = null; map.setCandidate(null); renderPickSheet(l, q); } }, 'Verwerfen'),
@@ -110,7 +117,12 @@ export function createGame(app, map) {
   function onLongPress(i) {
     const l = app.lobby;
     if (l?.phase !== 'question' || l.question.myGuess != null) return;
-    if (i == null) { toast(WATER_QUIPS[Math.floor(Math.random() * WATER_QUIPS.length)]); return; }
+    if (i == null) {
+      const mode = MODES[l.settings.mode] ?? MODES.welt;
+      const quips = MISS_QUIPS[mode.kind === 'point' ? 'point' : mode.map === 'germany' ? 'germany' : 'area'];
+      toast(quips[Math.floor(Math.random() * quips.length)]);
+      return;
+    }
     navigator.vibrate?.(18);
     candidate = i;
     map.setCandidate(i);
@@ -131,13 +143,19 @@ export function createGame(app, map) {
 
   return {
     render(l) {
-      const key = `${l.id}:${l.roundNo}:${l.phase}`;
-      const fresh = key !== roundKey;
-      roundKey = key;
-      if (l.phase === 'question') question(l, fresh);
-      else if (l.phase === 'reveal') reveal(l, fresh);
+      latest = l;
+      // Karte erst auf die Variante umstellen (lädt ggf. Daten), dann zeichnen
+      map.use(mapConfig(l.settings)).then(() => {
+        if (latest !== l) return;
+        const key = `${l.id}:${l.roundKey}:${l.phase}`;
+        const fresh = key !== roundKey;
+        roundKey = key;
+        if (l.phase === 'question') question(l, fresh);
+        else if (l.phase === 'reveal') reveal(l, fresh);
+      });
     },
     hide() {
+      latest = null;
       clearInterval(ticker);
       hud.hidden = true;
       sheet.hidden = true;

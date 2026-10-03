@@ -42,7 +42,8 @@ export function lobbyView(lobby, playerId) {
   if (lobby.phase === 'question') {
     const mine = round.guesses.get(playerId);
     view.question = {
-      target: round.target.name,
+      prompt: round.question.prompt,
+      target: round.question.subject,
       remainingMs: Math.max(0, round.deadline - now),
       limitMs: round.limitMs,
       myGuess: mine ? mine.country.i : null,
@@ -50,7 +51,7 @@ export function lobbyView(lobby, playerId) {
   }
   if (lobby.phase === 'reveal' && round?.results) {
     view.reveal = {
-      target: { i: round.target.i, name: round.target.name, continent: round.target.continent },
+      target: { i: round.target.i, name: round.target.name, sub: round.subline },
       results: round.results,
       autoNextMs: Math.max(0, round.revealUntil - now),
       last: lobby.roundNo >= lobby.settings.rounds,

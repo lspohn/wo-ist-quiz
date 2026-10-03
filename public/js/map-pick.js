@@ -33,3 +33,17 @@ export function createPicker(sizePx) {
     return best ? best.id : direct;
   };
 }
+
+const POINT_RADIUS_PX = 26;
+
+/** Nearest visible city point within reach of the touch (screen space). */
+export function pickPoint(points, toScreen, x, y) {
+  let best = null;
+  let bestD = POINT_RADIUS_PX;
+  for (const p of points) {
+    const [sx, sy] = toScreen(p.x, p.y);
+    const d = Math.hypot(sx - x, sy - y);
+    if (d < bestD) { bestD = d; best = p.i; }
+  }
+  return best;
+}

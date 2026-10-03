@@ -5,12 +5,21 @@ const RAD = Math.PI / 180;
 
 /** Load country metadata produced by scripts/build-map.mjs. */
 export function loadCountries(file = new URL('./data/countries.json', import.meta.url)) {
-  const list = JSON.parse(readFileSync(file, 'utf8'));
+  return prepare(JSON.parse(readFileSync(file, 'utf8')));
+}
+
+/** Precompute neighbour sets and radian border samples for area datasets. */
+export function prepare(list) {
   for (const c of list) {
     c.neighborSet = new Set(c.neighbors);
     c.rad = c.pts.map(([lon, lat]) => [lon * RAD, lat * RAD, Math.cos(lat * RAD)]);
   }
   return list;
+}
+
+/** Great-circle distance between two point items (with `rad`). */
+export function pointDistanceKm(a, b) {
+  return haversine(a.rad, b.rad);
 }
 
 /** Pool of target countries for a difficulty ('mittel' | 'schwer'). */

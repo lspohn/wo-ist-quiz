@@ -12,6 +12,9 @@ Mobile first (Chrome, Touch, Hoch- und Querformat), UI-Sprache Deutsch.
   - `lobby-view.js` – Zustand pro Spieler serialisieren (fremde Tipps werden während der Frage nie verschickt)
   - `scoring.js` / `geo.js` – Punkte nach Grenz-zu-Grenz-Distanz (Haversine über gesampelte Grenzpunkte)
   - `comments.js` + `data/comments.js` – sarkastische Kommentare, keine Wiederholung innerhalb eines Spiels
+  - `modes.js` + `public/js/modes.js` (gemeinsame Konfiguration) – Varianten Welt, Europa, Europa-Städte,
+    Deutschland, Deutschland-Städte: Fragenpools, Hauptstadtfragen, Wertung (Flächen nach Grenzabstand, Städte nach km)
+  - `deck.js` – gemischter Stapel pro Lobby/Variante, Wiederholung erst wenn alle Fragen dran waren
   - `highscores.js` – Top 10 pro Schwierigkeit × Rundenzahl, JSON-Datei in `$DATA_DIR` (Docker-Volume `laender-quiz-data`), `GET /api/highscores`
 - **Client** (`public/`, Vanilla-ES-Module, kein Build-Schritt): SVG-Weltkarte, eigene Pan/Pinch/Long-Press-Gesten.
   - Länder werden nur per Long-Press (550 ms) markiert und per Button bestätigt; Bewegung bricht den Press ab.
@@ -20,7 +23,11 @@ Mobile first (Chrome, Touch, Hoch- und Querformat), UI-Sprache Deutsch.
 
 ## Kartendaten
 
-`npm run build:map` erzeugt aus Natural Earth 50m (Download nach `.cache/`) die eingecheckten Dateien
+- `node scripts/fetch-places.mjs` – Städte-Schnappschuss nach `scripts/data/` (Wikidata: deutsche Städte ≥ 20.000 mit
+  Gemeindeschlüssel, Hauptstädte Europas; GeoNames cities15000 für kuratierte europäische Großstädte). Eingecheckt.
+- `node scripts/build-germany.mjs` – Deutschland-Karte (Natural Earth 10m Bundesländer, Nachbarländer, Flüsse, Seen, Städte)
+  → `public/data/germany.json`, `server/data/de-*.json`.
+- `npm run build:map` erzeugt aus Natural Earth 10m (Download nach `.cache/`) die eingecheckten Dateien
 `public/data/map.json` (projizierte SVG-Pfade) und `server/data/countries.json` (Namen, Kontinent, Nachbarn, Grenzpunkte).
 Zielländer und der Pool „mittel“ stehen in `scripts/countries-config.mjs`.
 

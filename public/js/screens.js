@@ -1,9 +1,11 @@
 // Startseite, Lobby-Raum und Endstand.
 import { h, fmt } from './dom.js';
 import { highscorePanel } from './highscores.js';
+import { MODES, MODE_IDS, levelOf } from './modes.js';
 
 const PHASE_LABEL = { lobby: 'wartet', question: 'läuft', reveal: 'läuft', final: 'Endstand' };
-const DIFF_LABEL = { mittel: 'Mittel', schwer: 'Schwer' };
+const modeOf = (s) => MODES[s.mode] ?? MODES.welt;
+const levelLabel = (s) => modeOf(s).levels[levelOf(s.mode, s.difficulty)].label;
 
 function brand() {
   return h('header.brand', {},
@@ -25,7 +27,8 @@ function nameField(app) {
 
 function settingChips(s) {
   return h('div.chips', {},
-    h('span.chip', {}, DIFF_LABEL[s.difficulty]),
+    h('span.chip.chip-mode', {}, modeOf(s).label),
+    h('span.chip', {}, levelLabel(s)),
     h('span.chip', {}, `${s.timeLimit} s`),
     h('span.chip', {}, `${s.rounds} Runden`),
   );
@@ -105,6 +108,18 @@ function podiumHeight(score, scores) {
   return Math.round(44 + 96 * ((score - base) / (max - base)));
 }
 
+function modePicker(s, isHost, set) {
+  return h('section.modes', { role: 'radiogroup', 'aria-label': 'Spielvariante' },
+    h('h2.section-title', {}, 'Variante'),
+    h('div.mode-grid', {}, MODE_IDS.map((id) => h('button.mode-card', {
+      role: 'radio',
+      'aria-checked': String(s.mode === id),
+      disabled: !isHost,
+      onclick: () => set({ mode: id, difficulty: Object.keys(MODES[id].levels)[0] }),
+    }, h('span.mode-label', {}, MODES[id].label), h('span.mode-blurb', {}, MODES[id].blurb)))),
+  );
+}
+
 /** Waiting room with settings (editable by host). */
 export function roomScreen(app) {
   const l = app.lobby;
@@ -117,13 +132,12 @@ export function roomScreen(app) {
       h('p.brand-kicker', {}, isHost ? 'Du bist Host' : `Host: ${host?.name ?? '?'}`),
       h('h1.room-title', {}, 'Lobby'),
     ),
+    modePicker(s, isHost, set),
     h('section.settings', {},
-      segmented('Schwierigkeit', 'difficulty', [['mittel', 'Mittel'], ['schwer', 'Schwer']], s.difficulty, isHost, set),
+      segmented('Schwierigkeit', 'difficulty', Object.entries(modeOf(s).levels).map(([k, v]) => [k, v.label]), levelOf(s.mode, s.difficulty), isHost, set),
       segmented('Zeit pro Runde', 'timeLimit', [[20, '20 s'], [40, '40 s'], [60, '60 s']], s.timeLimit, isHost, set),
       segmented('Runden', 'rounds', [[5, '5'], [10, '10'], [15, '15']], s.rounds, isHost, set),
-      h('p.hint', {}, s.difficulty === 'mittel'
-        ? 'Mittel: rund 120 bekanntere Länder.'
-        : 'Schwer: alle 197 Länder – inklusive Tuvalu, Nauru und Konsorten.'),
+      h('p.hint', {}, modeOf(s).levels[levelOf(s.mode, s.difficulty)].hint),
     ),
     h('section', {},
       h('h2.section-title', {}, `Mitspieler (${l.players.length})`),
@@ -146,7 +160,7 @@ export function finalScreen(app) {
   const top = l.players.slice(0, 3);
   const order = [top[1], top[0], top[2]].filter(Boolean);
   return h('div.panel.final', {},
-    h('p.brand-kicker', {}, `${l.settings.rounds} Runden · ${DIFF_LABEL[l.settings.difficulty]}`),
+    h('p.brand-kicker', {}, `${modeOf(l.settings).label} · ${levelLabel(l.settings)} · ${l.settings.rounds} Runden`),
     h('h1.room-title', {}, 'Endstand'),
     h('div.podium', {}, order.map((p) => {
       const rank = l.players.indexOf(p) + 1;
@@ -158,7 +172,7 @@ export function finalScreen(app) {
     })),
     l.final?.highscoreRank ? h('p.hs-badge', {},
       h('span.hs-badge-rank', {}, `#${l.final.highscoreRank}`),
-      h('span', {}, 'Du stehst in der Bestenliste', h('small', {}, `${DIFF_LABEL[l.settings.difficulty]} · ${l.settings.rounds} Runden`)),
+      h('span', {}, 'Du stehst in der Bestenliste', h('small', {}, `${modeOf(l.settings).label} · ${levelLabel(l.settings)} · ${l.settings.rounds} Runden`)),
     ) : null,
     l.final?.headline ? h('p.quip', {}, l.final.headline) : null,
     l.final?.mine ? h('div.quip-mine', {}, h('span.section-title', {}, 'Dein Fazit'), h('p.quip.quip-loser', {}, l.final.mine)) : null,

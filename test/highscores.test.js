@@ -9,8 +9,8 @@ const tmpFile = () => join(mkdtempSync(join(tmpdir(), 'hs-')), 'highscores.json'
 const settings = { difficulty: 'mittel', timeLimit: 30, rounds: 5 };
 
 test('boardKey separates difficulty and round count', () => {
-  assert.equal(boardKey(settings), 'mittel-5');
-  assert.equal(boardKey({ ...settings, difficulty: 'schwer', rounds: 15 }), 'schwer-15');
+  assert.equal(boardKey(settings), 'welt-mittel-5');
+  assert.equal(boardKey({ ...settings, mode: 'de-staedte', difficulty: 'schwer', rounds: 15 }), 'de-staedte-schwer-15');
 });
 
 test('record returns rank per player and keeps list sorted', () => {
@@ -21,7 +21,7 @@ test('record returns rank per player and keeps list sorted', () => {
     { id: 'c', name: 'Cem', score: 100 },
   ]);
   assert.deepEqual(ranks, { b: 1, c: 3 });
-  assert.deepEqual(hs.board('mittel-5').map((e) => e.name), ['Ben', 'Anna', 'Cem']);
+  assert.deepEqual(hs.board('welt-mittel-5').map((e) => e.name), ['Ben', 'Anna', 'Cem']);
 });
 
 test('record caps the board and reports no rank for players outside it', () => {
@@ -29,7 +29,7 @@ test('record caps the board and reports no rank for players outside it', () => {
   for (let k = 0; k < MAX_ENTRIES; k++) hs.record(settings, [{ id: `p${k}`, name: `P${k}`, score: 1000 + k }]);
   const ranks = hs.record(settings, [{ id: 'z', name: 'Zoe', score: 5 }]);
   assert.deepEqual(ranks, {});
-  assert.equal(hs.board('mittel-5').length, MAX_ENTRIES);
+  assert.equal(hs.board('welt-mittel-5').length, MAX_ENTRIES);
 });
 
 test('equal score keeps the older entry ahead', () => {
@@ -43,8 +43,8 @@ test('scores persist to disk and reload', () => {
   const file = tmpFile();
   new Highscores(file, () => 1000).record(settings, [{ id: 'a', name: 'Anna', score: 777 }]);
   const again = new Highscores(file);
-  assert.equal(again.board('mittel-5')[0].score, 777);
-  assert.equal(JSON.parse(readFileSync(file, 'utf8'))['mittel-5'][0].name, 'Anna');
+  assert.equal(again.board('welt-mittel-5')[0].score, 777);
+  assert.equal(JSON.parse(readFileSync(file, 'utf8'))['welt-mittel-5'][0].name, 'Anna');
 });
 
 test('corrupt file starts empty instead of crashing', () => {
@@ -56,5 +56,11 @@ test('corrupt file starts empty instead of crashing', () => {
 test('zero scores are not recorded', () => {
   const hs = new Highscores(tmpFile());
   assert.deepEqual(hs.record(settings, [{ id: 'a', name: 'Anna', score: 0 }]), {});
-  assert.equal(hs.board('mittel-5').length, 0);
+  assert.equal(hs.board('welt-mittel-5').length, 0);
+});
+
+test('legacy keys without mode are migrated to welt', () => {
+  const file = tmpFile();
+  writeFileSync(file, JSON.stringify({ 'mittel-10': [{ name: 'Alt', score: 9, at: 1, players: 1 }] }));
+  assert.equal(new Highscores(file).board('welt-mittel-10')[0].name, 'Alt');
 });

@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadCountries } from '../server/geo.js';
+import { loadGameData } from '../server/modes.js';
 import { Lobby, REVEAL_MS, HOST_GRACE_MS, sanitizeSettings } from '../server/lobby.js';
 import { lobbyView } from '../server/lobby-view.js';
 
-const countries = loadCountries();
+const data = loadGameData();
 
 function fakeClock() {
   let t = 1_000_000;
@@ -27,7 +27,7 @@ function fakeClock() {
 
 function setup(settings = { rounds: 5, timeLimit: 20 }) {
   const clock = fakeClock();
-  const lobby = new Lobby({ id: 'L1', hostId: 'a', settings, countries, clock, random: () => 0.3 });
+  const lobby = new Lobby({ id: 'L1', hostId: 'a', settings, data, clock, random: () => 0.3 });
   lobby.addPlayer({ id: 'a', name: 'Anna' });
   lobby.addPlayer({ id: 'b', name: 'Ben' });
   return { lobby, clock };
@@ -35,7 +35,10 @@ function setup(settings = { rounds: 5, timeLimit: 20 }) {
 
 test('sanitizeSettings rejects unknown values', () => {
   assert.deepEqual(sanitizeSettings({ difficulty: 'leicht', timeLimit: 45, rounds: 15 }),
-    { difficulty: 'mittel', timeLimit: 40, rounds: 15 });
+    { mode: 'welt', difficulty: 'mittel', timeLimit: 40, rounds: 15 });
+  assert.equal(sanitizeSettings({ mode: 'de-staedte', difficulty: 'sehrschwer' }).difficulty, 'sehrschwer');
+  assert.equal(sanitizeSettings({ mode: 'welt', difficulty: 'sehrschwer' }).difficulty, 'mittel');
+  assert.equal(sanitizeSettings({ mode: 'mond' }).mode, 'welt');
   assert.equal(sanitizeSettings({ timeLimit: 20 }).timeLimit, 20);
 });
 
@@ -191,7 +194,7 @@ test('returning player becomes host when offline host grace expired', () => {
 test('finish reports highscore ranks per player in the view', () => {
   const clock = fakeClock();
   const lobby = new Lobby({
-    id: 'L2', hostId: 'a', settings: { rounds: 5 }, countries, clock, random: () => 0.3,
+    id: 'L2', hostId: 'a', settings: { rounds: 5 }, data, clock, random: () => 0.3,
     onFinish: (l) => ({ [l.standings()[0].id]: 1 }),
   });
   lobby.addPlayer({ id: 'a', name: 'Anna' });
@@ -230,7 +233,7 @@ test('scores accumulate across games of one lobby', () => {
 
 test('targets do not repeat across games until the pool is used up', () => {
   const clock = fakeClock();
-  const lobby = new Lobby({ id: 'L3', hostId: 'a', settings: { rounds: 15 }, countries, clock });
+  const lobby = new Lobby({ id: 'L3', hostId: 'a', settings: { rounds: 15 }, data, clock });
   lobby.addPlayer({ id: 'a', name: 'Anna' });
   const all = [];
   for (let g = 0; g < 8; g++) all.push(...playGame(lobby, clock, 15, { a: (t) => t }));
@@ -239,7 +242,7 @@ test('targets do not repeat across games until the pool is used up', () => {
 
 test('final comments do not repeat across games in one lobby', () => {
   const clock = fakeClock();
-  const lobby = new Lobby({ id: 'L4', hostId: 'a', settings: { rounds: 5 }, countries, clock });
+  const lobby = new Lobby({ id: 'L4', hostId: 'a', settings: { rounds: 5 }, data, clock });
   lobby.addPlayer({ id: 'a', name: 'Anna' });
   const seen = [];
   for (let g = 0; g < 6; g++) {

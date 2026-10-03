@@ -130,3 +130,20 @@
 .player-me { border-color: rgba(46, 230, 166, 0.45); box-shadow: inset 4px 0 0 var(--mint); }
 .player-rank { font-family: var(--display); font-size: 1.3rem; color: var(--muted); min-width: 2ch; }
 .quip-mine { display: flex; flex-direction: column; gap: 4px; padding-left: 14px; border-left: 3px solid var(--gold); }
+
+/* ---------- Varianten ---------- */
+.modes { display: flex; flex-direction: column; gap: 10px; }
+.mode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.mode-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;
+  min-height: 64px; padding: 10px 14px; border-radius: 12px; cursor: pointer;
+  background: rgba(11, 22, 34, 0.72); border: 1.5px solid rgba(239, 228, 204, 0.14); color: var(--paper);
+}
+.mode-card[aria-checked='true'] { border-color: var(--gold); background: linear-gradient(135deg, rgba(232, 185, 74, 0.22), rgba(11, 22, 34, 0.8)); }
+.mode-card[disabled] { cursor: default; }
+.mode-card[disabled][aria-checked='false'] { opacity: 0.45; }
+.mode-card:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.mode-label { font-family: var(--display); font-size: 1.35rem; line-height: 1.05; }
+.mode-blurb { font-size: 0.78rem; color: var(--muted); }
+.chip-mode { background: rgba(46, 230, 166, 0.16); color: var(--mint); }
+.hs-modes { flex-wrap: wrap; border-radius: 18px; }

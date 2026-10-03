@@ -108,3 +108,5 @@
   .sheet-actions { flex-direction: column-reverse; }
   .sheet-actions .btn { width: 100%; }
 }
+.cat-de_neighbor, .cat-p_close, .cat-p_near { --cat: var(--gold); }
+.cat-de_far, .cat-eu_far, .cat-p_far, .cat-p_veryfar { --cat: var(--signal); }
