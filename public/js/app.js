@@ -13,7 +13,11 @@ const app = {
   lobbies: [],
   lobby: null,
   net: null,
-  send(type, payload) { app.net.send(type, payload); },
+  send(type, payload) {
+    const ok = app.net.send(type, payload);
+    if (!ok) toast('Keine Verbindung – gleich nochmal versuchen.');
+    return ok;
+  },
   setName(raw) {
     const name = raw.trim().slice(0, 16);
     if (!name || name === app.me.name) return;

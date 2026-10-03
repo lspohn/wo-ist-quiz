@@ -143,3 +143,45 @@ test('late joiner can participate in running game', () => {
   lobby.guess('c', 1);
   assert.equal(lobby.phase, 'reveal');
 });
+
+test('guess after deadline is rejected even if timer has not fired', () => {
+  const { lobby, clock } = setup();
+  lobby.start('a');
+  const t = lobby.round.target.i;
+  clock.now = ((n) => () => n + 31_000)(clock.now());
+  assert.equal(lobby.guess('a', t), false);
+  assert.equal(lobby.phase, 'reveal');
+  assert.equal(lobby.players.get('a').score, 0);
+});
+
+test('guess with stale round key is rejected', () => {
+  const { lobby } = setup();
+  lobby.start('a');
+  const key = lobby.roundKey;
+  lobby.guess('a', 1); lobby.guess('b', 1);
+  lobby.next('a', key);
+  assert.equal(lobby.phase, 'question');
+  assert.equal(lobby.guess('b', 2, key), false);
+  assert.equal(lobby.guess('b', 2, lobby.roundKey), true);
+});
+
+test('stale next does not skip a later reveal', () => {
+  const { lobby } = setup();
+  lobby.start('a');
+  const key1 = lobby.roundKey;
+  lobby.guess('a', 1); lobby.guess('b', 1);
+  lobby.next('a', key1);
+  lobby.guess('a', 1); lobby.guess('b', 1);
+  assert.equal(lobby.next('a', key1), false);
+  assert.equal(lobby.phase, 'reveal');
+});
+
+test('returning player becomes host when offline host grace expired', () => {
+  const { lobby, clock } = setup();
+  lobby.setConnected('a', false);
+  lobby.setConnected('b', false);
+  clock.advance(HOST_GRACE_MS);
+  assert.equal(lobby.hostId, 'a');
+  lobby.setConnected('b', true);
+  assert.equal(lobby.hostId, 'b');
+});

@@ -35,6 +35,7 @@ export function lobbyView(lobby, playerId) {
     settings: lobby.settings,
     players,
     roundNo: lobby.roundNo,
+    roundKey: lobby.roundKey,
   };
   if (lobby.phase === 'question') {
     const mine = round.guesses.get(playerId);

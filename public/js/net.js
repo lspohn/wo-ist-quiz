@@ -22,7 +22,6 @@ export function rememberName(name) {
 export function connect({ onMessage, onStatus }) {
   let ws = null;
   let retry = 0;
-  let queue = [];
   let timer = null;
 
   function open() {
@@ -35,8 +34,6 @@ export function connect({ onMessage, onStatus }) {
       onStatus?.('online');
       const id = load(sessionStorage, KEY) ?? {};
       ws.send(JSON.stringify({ type: 'hello', playerId: id.playerId, token: id.token, name: rememberedName() }));
-      for (const m of queue) ws.send(m);
-      queue = [];
     };
     ws.onmessage = (ev) => {
       const msg = JSON.parse(ev.data);
@@ -59,10 +56,11 @@ export function connect({ onMessage, onStatus }) {
 
   open();
   return {
+    /** Returns false while offline; actions are never queued for later. */
     send(type, payload = {}) {
-      const data = JSON.stringify({ type, ...payload });
-      if (ws?.readyState === 1) ws.send(data);
-      else queue.push(data);
+      if (ws?.readyState !== 1) return false;
+      ws.send(JSON.stringify({ type, ...payload }));
+      return true;
     },
   };
 }

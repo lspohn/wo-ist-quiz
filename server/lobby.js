@@ -41,12 +41,22 @@ export class Lobby {
     this.phase = 'lobby';
     this.round = null;
     this.roundNo = 0;
+    this.gameNo = 0;
     this.usedTargets = new Set();
     this.comments = new CommentPicker(random);
     this.timer = null;
     this.hostTimer = null;
     this.finalComments = null;
     this.lastActivity = clock.now();
+  }
+
+  /** Identifies the current round so stale client actions can be rejected. */
+  get roundKey() {
+    return `${this.gameNo}-${this.roundNo}`;
+  }
+
+  isStale(key) {
+    return key !== undefined && key !== this.roundKey;
   }
 
   get connectedPlayers() {
@@ -56,12 +66,14 @@ export class Lobby {
   addPlayer({ id, name }) {
     if (this.players.has(id)) {
       this.setConnected(id, true);
+      this.ensureHost();
       return true;
     }
     if (this.players.size >= MAX_PLAYERS) return false;
     const used = new Set([...this.players.values()].map((p) => p.color));
     const color = PLAYER_COLORS.find((c) => !used.has(c)) ?? PLAYER_COLORS[0];
     this.players.set(id, { id, name, color, score: 0, connected: true, joinedAt: this.clock.now() });
+    this.ensureHost();
     this.touch();
     return true;
   }
@@ -79,14 +91,26 @@ export class Lobby {
     p.connected = connected;
     if (id === this.hostId) {
       this.clock.clearTimeout(this.hostTimer);
-      if (!connected) this.hostTimer = this.clock.setTimeout(() => this.transferHost(), HOST_GRACE_MS);
+      this.hostTimer = null;
+      if (!connected) {
+        this.hostTimer = this.clock.setTimeout(() => { this.hostTimer = null; this.transferHost(); }, HOST_GRACE_MS);
+      }
     }
-    if (!connected) this.checkRoundComplete();
+    if (connected) this.ensureHost();
+    else this.checkRoundComplete();
     this.touch();
   }
 
+  /** After the host's grace period, an offline host hands over to anyone online. */
+  ensureHost() {
+    const host = this.players.get(this.hostId);
+    if (host?.connected || this.hostTimer) return;
+    this.transferHost();
+  }
+
   transferHost() {
-    const next = this.connectedPlayers.find((p) => p.id !== this.hostId) ?? [...this.players.values()][0];
+    const next = this.connectedPlayers.find((p) => p.id !== this.hostId)
+      ?? (this.players.has(this.hostId) ? null : [...this.players.values()][0]);
     if (next && next.id !== this.hostId) {
       this.hostId = next.id;
       this.touch();
@@ -106,6 +130,7 @@ export class Lobby {
     this.usedTargets.clear();
     this.comments = new CommentPicker(this.random);
     this.roundNo = 0;
+    this.gameNo += 1;
     this.finalComments = null;
     this.startRound();
     return true;
@@ -126,8 +151,12 @@ export class Lobby {
     this.touch();
   }
 
-  guess(byId, countryIndex) {
-    if (this.phase !== 'question' || !this.players.has(byId)) return false;
+  guess(byId, countryIndex, key) {
+    if (this.phase !== 'question' || !this.players.has(byId) || this.isStale(key)) return false;
+    if (this.clock.now() >= this.round.deadline) {
+      this.endRound();
+      return false;
+    }
     if (this.round.guesses.has(byId)) return false;
     const country = this.countries[countryIndex];
     if (!country || !Number.isInteger(countryIndex)) return false;
@@ -170,8 +199,8 @@ export class Lobby {
     this.touch();
   }
 
-  next(byId) {
-    if (byId !== this.hostId || this.phase !== 'reveal') return false;
+  next(byId, key) {
+    if (byId !== this.hostId || this.phase !== 'reveal' || this.isStale(key)) return false;
     this.advance();
     return true;
   }

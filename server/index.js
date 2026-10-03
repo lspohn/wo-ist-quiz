@@ -39,8 +39,17 @@ function loadStatic(dir) {
 const files = loadStatic(PUBLIC_DIR);
 const hub = new Hub({ countries: loadCountries() });
 
+function pathOf(rawUrl) {
+  try { return new URL(rawUrl, 'http://x').pathname; } catch { return null; }
+}
+
 const server = createServer((req, res) => {
-  const url = new URL(req.url, 'http://x').pathname;
+  const url = pathOf(req.url);
+  if (url === null) {
+    res.writeHead(400, { 'content-type': 'text/plain' });
+    res.end('Bad Request');
+    return;
+  }
   if (url === '/health') {
     res.writeHead(200, { 'content-type': 'text/plain' });
     res.end('ok');
@@ -73,6 +82,8 @@ wss.on('connection', (socket) => {
     try { hub.handle(socket, msg); } catch (err) { console.error('handle failed', err); }
   });
   socket.on('close', () => hub.disconnect(socket));
+  // z. B. Frame > maxPayload: nur diese Verbindung schließen, nie den Prozess
+  socket.on('error', () => socket.terminate());
 });
 
 // Tote Verbindungen (schlafende Handys) erkennen
@@ -84,5 +95,8 @@ setInterval(() => {
   }
   hub.sweep();
 }, 20_000).unref();
+
+wss.on('error', (err) => console.error('ws server error', err));
+server.on('clientError', (_err, sock) => sock.destroy());
 
 server.listen(PORT, '0.0.0.0', () => console.log(`Länderquiz läuft auf Port ${PORT}`));

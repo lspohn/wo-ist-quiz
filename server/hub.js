@@ -57,14 +57,23 @@ export class Hub {
       case 'leaveLobby': return this.leaveLobby(player);
       case 'settings': return lobby?.updateSettings(player.id, msg.settings);
       case 'start': return lobby?.start(player.id);
-      case 'guess': return lobby?.guess(player.id, msg.country);
-      case 'next': return lobby?.next(player.id);
+      case 'guess': return lobby?.guess(player.id, msg.country, String(msg.key));
+      case 'next': return lobby?.next(player.id, String(msg.key));
       case 'backToLobby': return lobby?.backToLobby(player.id);
       default: return undefined;
     }
   }
 
   hello(socket, msg) {
+    // Eine Verbindung = eine Identität; weitere hellos liefern nur den Zustand erneut
+    const bound = this.players.get(socket.playerId);
+    if (bound) {
+      send(socket, { type: 'welcome', playerId: bound.id, token: bound.token, name: bound.name });
+      const lobby = this.lobbyOf(bound);
+      if (lobby) this.sendLobby(lobby, bound);
+      else this.sendLobbyList([bound]);
+      return;
+    }
     let player = this.players.get(msg.playerId);
     if (!player || player.token !== msg.token) {
       player = { id: newId(6), token: newId(16), name: '', lobbyId: null, sockets: new Set() };

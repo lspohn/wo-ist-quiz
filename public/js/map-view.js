@@ -45,6 +45,7 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
   let maxK = 80;
   let anim = null;
   let markerEls = [];
+  let gestures = null;
 
   const size = () => ({ W: host.clientWidth, H: host.clientHeight });
 
@@ -95,6 +96,7 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
 
   function fitAll() {
     cancelAnimationFrame(anim);
+    gestures?.stopInertia();
     const { W, H } = size();
     const fit = Math.min(W / data.w, H / data.h);
     minK = fit * 0.9;
@@ -111,6 +113,7 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
 
   function animateTo(k, x, y, ms = 650) {
     cancelAnimationFrame(anim);
+    gestures?.stopInertia();
     const from = { ...s };
     const t0 = performance.now();
     const step = (t) => {
@@ -192,7 +195,7 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
     apply();
   }
 
-  const gestures = attachGestures(svg, view, {
+  gestures = attachGestures(svg, view, {
     onLongPressStart,
     onLongPressCancel,
     onLongPress: (x, y) => onLongPress?.(countryAt(x, y), x, y),
@@ -219,7 +222,8 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
       for (const cls of ['candidate', 'locked', 'target', 'wrong']) setClass(cls, []);
       setMarkers([]);
     },
-    cancelPress: gestures.cancel,
+    cancelPress: () => gestures.cancel(),
+    resetGestures: () => gestures.reset(),
     setInteractive: (on) => svg.classList.toggle('readonly', !on),
   };
 }

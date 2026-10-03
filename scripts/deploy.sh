@@ -6,7 +6,7 @@ ssh raspi bash -s <<'REMOTE'
 set -euo pipefail
 DIR="$HOME/laender-quiz"
 if [ -d "$DIR/.git" ]; then git -C "$DIR" fetch -q origin && git -C "$DIR" reset -q --hard origin/main
-else git clone -q /git/laender-quiz.git "$DIR"; fi
+else git clone -q -b main /git/laender-quiz.git "$DIR"; fi
 cd "$DIR"
 docker build -q -t laender-quiz:latest .
 docker rm -f laender-quiz >/dev/null 2>&1 || true

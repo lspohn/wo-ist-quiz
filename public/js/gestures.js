@@ -89,7 +89,10 @@ export function attachGestures(el, view, cb) {
     if (!pointers.has(e.pointerId)) return;
     pointers.delete(e.pointerId);
     cancelPress();
-    if (pointers.size === 1) {
+    if (pointers.size === 2) {
+      // dritter Finger weg: neue Pinch-Referenz, sonst springt der Zoom
+      startPinch();
+    } else if (pointers.size === 1) {
       // Nach Pinch weiter mit einem Finger schieben, ohne Sprung
       pinch = null;
       lastMoves = [];
@@ -137,5 +140,14 @@ export function attachGestures(el, view, cb) {
 
   el.addEventListener('contextmenu', (e) => e.preventDefault());
 
-  return { cancel: cancelPress };
+  /** Forget all in-flight gestures (phase change, programmatic view change). */
+  function reset() {
+    cancelPress();
+    cancelAnimationFrame(inertia);
+    pointers.clear();
+    pinch = null;
+    lastMoves = [];
+  }
+
+  return { cancel: cancelPress, reset, stopInertia: () => cancelAnimationFrame(inertia) };
 }

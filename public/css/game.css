@@ -47,7 +47,8 @@
 .sheet-title { margin: 0; font-family: var(--display); font-size: 1.9rem; line-height: 1.1; }
 .sheet-sub { margin: 4px 0 0; color: var(--muted); }
 .sheet-actions { display: flex; gap: 10px; margin-top: 14px; }
-.sheet-actions .btn { flex: 1; }
+.sheet-actions { flex-wrap: wrap; }
+.sheet-actions .btn { flex: 1 1 auto; min-width: 0; padding: 0 16px; }
 .sheet-actions .waiting { flex: 1; padding: 6px; }
 .auto-next { font-weight: 500; opacity: 0.7; font-size: 0.9em; }
 
@@ -88,4 +89,6 @@
   .sheet-pick { top: auto; bottom: 12px; right: 12px; border-radius: 18px; }
   @keyframes sheet-up { from { transform: translateX(30%); opacity: 0; } }
   .verdict-points { font-size: 2.6rem; }
+  .sheet-actions { flex-direction: column-reverse; }
+  .sheet-actions .btn { width: 100%; }
 }

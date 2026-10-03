@@ -78,7 +78,7 @@ export function createGame(app, map) {
         h('button.btn.btn-ghost', { onclick: () => { candidate = null; map.setCandidate(null); renderPickSheet(l, q); } }, 'Verwerfen'),
         h('button.btn.btn-primary', {
           onclick: () => {
-            app.send('guess', { country: candidate });
+            if (!app.send('guess', { country: candidate, key: l.roundKey })) return;
             map.setLocked(candidate);
             map.setCandidate(null);
             navigator.vibrate?.(30);
@@ -92,6 +92,7 @@ export function createGame(app, map) {
     const q = l.question;
     if (fresh) {
       candidate = null;
+      map.resetGestures();
       map.clearAll();
       map.fitAll();
     }
@@ -154,12 +155,13 @@ export function createGame(app, map) {
       others.length ? h('ul.results', {}, others.map((r, idx) => resultRow(l, r, idx))) : null,
       h('div.sheet-actions', {},
         isHost
-          ? h('button.btn.btn-primary.btn-wide', { onclick: () => app.send('next') }, rv.last ? 'Zum Endstand' : 'Nächstes Land', h('span.auto-next', {}, ''))
+          ? h('button.btn.btn-primary.btn-wide', { onclick: () => app.send('next', { key: l.roundKey }) }, rv.last ? 'Zum Endstand' : 'Nächstes Land', h('span.auto-next', {}, ''))
           : h('p.waiting', {}, rv.last ? 'Gleich kommt der Endstand · ' : 'Nächste Runde in ', h('span.auto-next', {}, '')),
       ),
     );
     startTicker();
     if (!fresh) return;
+    map.resetGestures();
     map.setInteractive(false);
     map.setCandidate(null);
     map.setLocked(null);
