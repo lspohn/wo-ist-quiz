@@ -1,6 +1,6 @@
 import { CommentPicker } from './comments.js';
 import { Deck } from './deck.js';
-import { answerSpace, questionPool, scoreForMode, targetSubline } from './modes.js';
+import { answerSpace, flagOf, questionPool, scoreForMode, targetSubline } from './modes.js';
 import { MODE_IDS, levelOf } from '../public/js/modes.js';
 
 export const SETTINGS_OPTIONS = {
@@ -209,6 +209,7 @@ export class Lobby {
         id: p.id,
         guess: g ? g.country.i : null,
         guessName: g ? g.country.name : null,
+        guessFlag: g ? flagOf(this.settings.mode, g.country) : null,
         ...score,
         comment: this.comments.pick(score.category, vars),
       });

@@ -1,5 +1,6 @@
 // Serialisiert den Lobby-Zustand pro Spieler. Während der Frage werden
 // fremde Tipps nie verschickt, nur ob jemand schon geantwortet hat.
+import { flagOf, noteOf, questionFlag } from './modes.js';
 
 /** Short entry for the public lobby list. */
 export function lobbySummary(lobby) {
@@ -41,9 +42,12 @@ export function lobbyView(lobby, playerId) {
   };
   if (lobby.phase === 'question') {
     const mine = round.guesses.get(playerId);
+    const mode = lobby.settings.mode;
     view.question = {
       prompt: round.question.prompt,
       target: round.question.subject,
+      flag: questionFlag(mode, round.question, round.target),
+      note: round.question.prompt === 'where' ? noteOf(round.target) : null,
       remainingMs: Math.max(0, round.deadline - now),
       limitMs: round.limitMs,
       myGuess: mine ? mine.country.i : null,
@@ -51,7 +55,10 @@ export function lobbyView(lobby, playerId) {
   }
   if (lobby.phase === 'reveal' && round?.results) {
     view.reveal = {
-      target: { i: round.target.i, name: round.target.name, sub: round.subline },
+      target: {
+        i: round.target.i, name: round.target.name, sub: round.subline,
+        flag: flagOf(lobby.settings.mode, round.target), note: noteOf(round.target),
+      },
       results: round.results,
       autoNextMs: Math.max(0, round.revealUntil - now),
       last: lobby.roundNo >= lobby.settings.rounds,

@@ -110,3 +110,9 @@
 }
 .cat-de_neighbor, .cat-p_close, .cat-p_near { --cat: var(--gold); }
 .cat-de_far, .cat-eu_far, .cat-p_far, .cat-p_veryfar { --cat: var(--signal); }
+
+/* Flaggen & Anerkennungs-Hinweis */
+.hud-flag { height: 0.62em; width: auto; margin-right: 0.28em; vertical-align: 0.08em; border-radius: 3px; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25), 0 3px 10px rgba(0, 0, 0, 0.5); }
+.star { font-size: 0.5em; color: var(--gold); margin-left: 0.05em; }
+.hud-note { margin: -2px 0 6px; font-size: 0.75rem; color: var(--muted); font-style: italic; }
+.mini-flag { height: 0.85em; width: auto; margin-right: 5px; vertical-align: -0.08em; border-radius: 2px; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2); }

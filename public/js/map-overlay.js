@@ -70,6 +70,14 @@ export function createOverlay(host, project) {
       if (at) add(h('div.ping', {}, h('span', {}), h('span', {}), h('span', {})), at, 'ping');
       place();
     },
+    /** Flag badge beside the solved target (next to it, so small regions stay visible). */
+    setFlag(at, code) {
+      clear('flag');
+      if (at && code) {
+        add(h('div.map-flag', {}, h('img', { src: `/flags/${code}.svg`, alt: '', onerror: (e) => e.target.parentNode.remove() })), at, 'flag');
+      }
+      place();
+    },
     setRing(at) {
       clear('ring');
       if (at) add(h('div.cand-ring', {}), at, 'ring');

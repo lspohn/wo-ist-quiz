@@ -1,5 +1,5 @@
 // Frage- und Auflösungsphase: HUD oben, Bestätigen-/Ergebnis-Sheet unten.
-import { h, toast } from './dom.js';
+import { h, toast, flag, noted, fill } from './dom.js';
 import { renderRevealPanel, showRevealOnMap } from './reveal.js';
 import { MODES, PROMPTS, mapConfig } from './modes.js';
 
@@ -49,14 +49,15 @@ export function createGame(app, map) {
   function renderHud(l, q) {
     const answered = l.players.filter((p) => p.answered).length;
     hud.hidden = false;
-    hud.replaceChildren(
+    fill(hud, 
       h('div.hud-row', {},
         h('span.hud-round', {}, `Runde ${l.roundNo}/${l.settings.rounds}`),
         h('span.hud-answered', {}, `${answered}/${l.players.filter((p) => p.connected).length} getippt`),
         h('span.timer-num', {}, Math.ceil(q.remainingMs / 1000)),
       ),
       h('p.hud-ask', {}, PROMPTS[q.prompt] ?? 'Wo liegt'),
-      h('h2.hud-target', {}, q.target),
+      h('h2.hud-target', {}, flag(q.flag, 'hud-flag'), ...noted(q.target, q.note)),
+      q.note ? h('p.hud-note', {}, `* ${q.note}`) : null,
       h('div.timer', {}, h('div.timer-fill', {})),
       h('div.hud-dots', {}, l.players.map((p) => h(`span.hud-dot${p.answered ? '.done' : ''}${p.id === l.you ? '.me' : ''}`, { '--c': p.color },
         h('span.hud-dot-name', {}, p.id === l.you ? 'Du' : p.name)))),
@@ -68,7 +69,7 @@ export function createGame(app, map) {
     sheet.className = 'sheet sheet-pick';
     if (q.myGuess != null) {
       const waiting = l.players.filter((p) => p.connected && !p.answered).map((p) => p.name);
-      sheet.replaceChildren(
+      fill(sheet, 
         h('p.sheet-title', {}, 'Tipp ist drin.'),
         h('p.sheet-sub', {}, waiting.length ? `Warte auf ${waiting.join(', ')} …` : 'Gleich gibt’s die Auflösung.'),
       );
@@ -76,12 +77,12 @@ export function createGame(app, map) {
     }
     const isPoint = MODES[l.settings.mode]?.kind === 'point';
     if (candidate == null) {
-      sheet.replaceChildren(
+      fill(sheet, 
         h('p.sheet-hint', {}, h('span.hold-icon', {}), h('span', {}, isPoint ? 'Stadt ' : 'Land ', h('strong', {}, 'gedrückt halten'), isPoint ? ', um sie zu markieren' : ', um es zu markieren')),
       );
       return;
     }
-    sheet.replaceChildren(
+    fill(sheet, 
       h('p.sheet-title', {}, MODES[l.settings.mode]?.kind === 'point' ? 'Stadt markiert' : 'Land markiert'),
       h('p.sheet-sub', {}, 'Sicher? Danach gibt es kein Zurück.'),
       h('div.sheet-actions', {},

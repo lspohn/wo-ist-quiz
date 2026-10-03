@@ -123,6 +123,11 @@ body[data-phase='home'] .map-svg, body[data-phase='lobby'] .map-svg, body[data-p
 @keyframes pin-drop { from { opacity: 0; translate: 0 -30px; } }
 @keyframes me-bob { 50% { translate: 0 -4px; } }
 
+.map-flag { width: 0; height: 0; z-index: 1; }
+.map-flag img {
+  position: absolute; left: 16px; top: -40px; height: 26px; width: auto; border-radius: 4px;
+  border: 2px solid #fff; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5); animation: pin-drop 0.45s 0.3s cubic-bezier(.2, 1.4, .4, 1) both;
+}
 .ping { width: 0; height: 0; }
 .ping span {
   position: absolute; left: -14px; top: -14px; width: 28px; height: 28px; border-radius: 50%;

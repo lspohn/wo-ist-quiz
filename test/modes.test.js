@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadGameData, questionPool, scoreForMode, answerSpace, targetSubline } from '../server/modes.js';
+import { loadGameData, questionPool, scoreForMode, answerSpace, targetSubline, questionFlag, flagOf, noteOf } from '../server/modes.js';
 
 const data = loadGameData();
 const city = (name) => data.deCities.find((c) => c.name === name);
@@ -61,4 +61,21 @@ test('sublines describe the solved target', () => {
   const q = questionPool(data, 'de-staedte', 'mittel').find((x) => x.subject === 'Köln');
   assert.match(targetSubline(data, 'de-staedte', q), /Nordrhein-Westfalen/);
   assert.equal(answerSpace(data, 'de-staedte')[q.answer].name, 'Köln');
+});
+
+test('flags never give the answer away', () => {
+  const capitalQ = questionPool(data, 'deutschland', 'schwer').find((q) => q.prompt === 'capital-state');
+  assert.equal(questionFlag('deutschland', capitalQ, data.deStates[capitalQ.answer]), null);
+  const cityQ = questionPool(data, 'europa-staedte', 'mittel')[0];
+  assert.equal(questionFlag('europa-staedte', cityQ, data.euCities[cityQ.answer]), null);
+  const whereQ = questionPool(data, 'deutschland', 'mittel').find((q) => q.subject === 'Bayern');
+  assert.equal(questionFlag('deutschland', whereQ, data.deStates[whereQ.answer]), 'de-by');
+  assert.equal(flagOf('de-staedte', city('Köln')), 'de-nw');
+  assert.equal(flagOf('welt', data.world.find((c) => c.iso === 'FR' && c.target)), 'fr');
+});
+
+test('disputed states carry a recognition note', () => {
+  for (const iso of ['PS', 'XK', 'TW']) assert.ok(noteOf(data.world.find((c) => c.iso === iso && c.target)));
+  assert.equal(noteOf(data.world.find((c) => c.iso === 'DE' && c.target)), null);
+  assert.ok(noteOf(data.euCities.find((c) => c.name === 'Pristina')));
 });

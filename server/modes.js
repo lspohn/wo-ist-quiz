@@ -77,6 +77,35 @@ export function targetSubline(data, mode, question) {
   return t.continent;
 }
 
+const STATE_FLAGS = {
+  'Baden-Württemberg': 'de-bw', Bayern: 'de-by', Berlin: 'de-be', Brandenburg: 'de-bb', Bremen: 'de-hb',
+  Hamburg: 'de-hh', Hessen: 'de-he', 'Mecklenburg-Vorpommern': 'de-mv', Niedersachsen: 'de-ni',
+  'Nordrhein-Westfalen': 'de-nw', 'Rheinland-Pfalz': 'de-rp', Saarland: 'de-sl', Sachsen: 'de-sn',
+  'Sachsen-Anhalt': 'de-st', 'Schleswig-Holstein': 'de-sh', Thüringen: 'de-th',
+};
+// Staaten, die nicht von allen UN-Mitgliedern anerkannt sind
+const LIMITED_RECOGNITION = new Set(['PS', 'XK', 'TW']);
+export const RECOGNITION_NOTE = 'Nicht von allen Staaten anerkannt';
+
+/** Flag code for an answer item (country ISO, state 'de-xx', or the city's state/country). */
+export function flagOf(mode, item) {
+  if (!item) return null;
+  if (mode === 'deutschland') return STATE_FLAGS[item.name] ?? null;
+  if (mode === 'de-staedte') return STATE_FLAGS[item.state] ?? null;
+  return item.iso && item.iso !== '-99' ? item.iso.toLowerCase() : null;
+}
+
+/** Recognition hint for disputed states (also for their capitals). */
+export function noteOf(item) {
+  return item && LIMITED_RECOGNITION.has(item.iso) ? RECOGNITION_NOTE : null;
+}
+
+/** Flag shown with the question – only where it gives nothing away. */
+export function questionFlag(mode, question, item) {
+  if (question.prompt !== 'where' || MODES[mode].kind !== 'area') return null;
+  return flagOf(mode, item);
+}
+
 /** Score a guess according to the mode. */
 export function scoreForMode(mode, target, guess, timeFraction) {
   const cfg = MODES[mode];

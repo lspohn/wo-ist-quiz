@@ -1,5 +1,5 @@
 // Auflösung: Karte (Ziel pulsiert, Tipps in Spielerfarben mit Linien) und Ergebnistabelle.
-import { h, fmt, CATEGORY_LABEL } from './dom.js';
+import { h, fmt, flag, noted, fill, CATEGORY_LABEL } from './dom.js';
 
 const initials = (name) => name.trim().slice(0, 2);
 
@@ -9,7 +9,7 @@ function resultRow(l, r, idx, isMe) {
     h('span.result-rank', {}, String(idx + 1)),
     h('span.result-who', {},
       h('span.result-name', {}, h('span.player-dot', {}), p?.name ?? '?', isMe ? h('span.tag.tag-you', {}, 'du') : null),
-      h('span.result-guess', {}, r.guessName ?? 'kein Tipp', r.km ? ` · ${fmt(r.km)} km` : ''),
+      h('span.result-guess', {}, flag(r.guessFlag, 'mini-flag'), r.guessName ?? 'kein Tipp', r.km ? ` · ${fmt(r.km)} km` : ''),
     ),
     h('span.result-pts', {},
       h('span.result-points', {}, `+${fmt(r.points)}`),
@@ -28,14 +28,15 @@ export function renderRevealPanel({ l, hud, sheet, app }) {
   const isHost = l.hostId === l.you;
   hud.hidden = false;
   hud.classList.remove('hurry');
-  hud.replaceChildren(
+  fill(hud, 
     h('div.hud-row', {}, h('span.hud-round', {}, `Runde ${l.roundNo}/${l.settings.rounds} · Auflösung`)),
-    h('h2.hud-target.solved', {}, rv.target.name),
+    h('h2.hud-target.solved', {}, flag(rv.target.flag, 'hud-flag'), ...noted(rv.target.name, rv.target.note)),
     h('p.hud-ask', {}, rv.target.sub ?? ''),
+    rv.target.note ? h('p.hud-note', {}, `* ${rv.target.note}`) : null,
   );
   sheet.hidden = false;
   sheet.className = `sheet sheet-reveal cat-${mine?.category ?? 'none'}`;
-  sheet.replaceChildren(
+  fill(sheet, 
     mine ? h('div.verdict', {},
       h('div.verdict-head', {},
         h('span.verdict-cat', {}, CATEGORY_LABEL[mine.category]),
@@ -86,6 +87,7 @@ export function showRevealOnMap({ l, map, inset }) {
   map.overlay.setLines(guessed.filter((r) => r.guess !== rv.target.i)
     .map((r) => ({ from: map.anchor(r.guess), to: targetAt, color: color(r.id), me: r.id === l.you })));
   map.overlay.setPing(targetAt);
+  map.overlay.setFlag(rv.target.flag ? targetAt : null, rv.target.flag);
 
   const b = [...map.coreBounds(rv.target.i)];
   for (const r of guessed) {

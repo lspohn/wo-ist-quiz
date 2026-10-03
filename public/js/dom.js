@@ -18,6 +18,22 @@ export function h(spec, props = {}, ...children) {
   return el;
 }
 
+/** Small flag image; disappears silently if the file is missing. */
+export function flag(code, cls = 'flag') {
+  if (!code) return null;
+  return h(`img.${cls}`, { src: `/flags/${code}.svg`, alt: '', loading: 'lazy', decoding: 'async', onerror: (e) => e.target.remove() });
+}
+
+/** Country/place name with asterisk + footnote for disputed states. */
+export function noted(name, note) {
+  return note ? [name, h('sup.star', { title: note }, '*')] : [name];
+}
+
+/** replaceChildren that skips null/false (the DOM API would print "null"). */
+export function fill(el, ...children) {
+  el.replaceChildren(...children.flat().filter((c) => c != null && c !== false));
+}
+
 let toastTimer;
 /** Short message at the bottom of the screen. */
 export function toast(text, ms = 2200) {

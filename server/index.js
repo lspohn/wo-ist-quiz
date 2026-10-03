@@ -72,7 +72,7 @@ const server = createServer((req, res) => {
   const gzip = /\bgzip\b/.test(req.headers['accept-encoding'] ?? '');
   res.writeHead(200, {
     'content-type': file.type,
-    'cache-control': url.startsWith('/data/') ? 'public, max-age=86400' : 'no-cache',
+    'cache-control': /^\/(data|flags|fonts)\//.test(url) ? 'public, max-age=86400' : 'no-cache',
     ...(gzip ? { 'content-encoding': 'gzip' } : {}),
     vary: 'accept-encoding',
   });
