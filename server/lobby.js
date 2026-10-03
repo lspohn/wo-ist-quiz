@@ -29,7 +29,9 @@ export function sanitizeSettings(input = {}, base = DEFAULT_SETTINGS) {
 
 /** One game room: lobby → question ↔ reveal → final. */
 export class Lobby {
-  constructor({ id, hostId, settings, countries, clock = defaultClock, random = Math.random, onChange = () => {} }) {
+  constructor({
+    id, hostId, settings, countries, clock = defaultClock, random = Math.random, onChange = () => {}, onFinish = () => ({}),
+  }) {
     this.id = id;
     this.hostId = hostId;
     this.settings = sanitizeSettings(settings);
@@ -37,6 +39,8 @@ export class Lobby {
     this.clock = clock;
     this.random = random;
     this.onChange = onChange;
+    this.onFinish = onFinish;
+    this.highscoreRanks = {};
     this.players = new Map();
     this.phase = 'lobby';
     this.round = null;
@@ -215,10 +219,11 @@ export class Lobby {
     this.clock.clearTimeout(this.timer);
     this.phase = 'final';
     const ranking = this.standings();
+    this.highscoreRanks = this.onFinish(this) ?? {};
     const winner = ranking[0];
     const loser = ranking.length > 1 ? ranking[ranking.length - 1] : null;
     this.finalComments = {
-      winner: winner ? this.comments.pick('winner', { name: winner.name }) : null,
+      winner: winner ? this.comments.pick(ranking.length === 1 ? 'solo' : 'winner', { name: winner.name }) : null,
       loser: loser && loser.score < winner.score ? this.comments.pick('loser', { name: loser.name }) : null,
     };
     this.touch();

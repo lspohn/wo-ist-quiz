@@ -1,5 +1,6 @@
 // Startseite, Lobby-Raum und Endstand.
 import { h, fmt } from './dom.js';
+import { highscorePanel } from './highscores.js';
 
 const PHASE_LABEL = { lobby: 'wartet', question: 'läuft', reveal: 'läuft', final: 'Endstand' };
 const DIFF_LABEL = { mittel: 'Mittel', schwer: 'Schwer' };
@@ -55,6 +56,7 @@ export function homeScreen(app) {
       h('h2.section-title', {}, 'Offene Spiele'),
       h('ul.lobby-list', {}, list),
     ),
+    highscorePanel(),
   );
 }
 
@@ -133,9 +135,14 @@ export function finalScreen(app) {
         h('span.podium-block', {}, String(rank)),
       );
     })),
+    l.final?.highscoreRank ? h('p.hs-badge', {},
+      h('span.hs-badge-rank', {}, `#${l.final.highscoreRank}`),
+      h('span', {}, 'Du stehst in der Bestenliste', h('small', {}, `${DIFF_LABEL[l.settings.difficulty]} · ${l.settings.rounds} Runden`)),
+    ) : null,
     l.final?.winner ? h('p.quip', {}, l.final.winner) : null,
     l.final?.loser ? h('p.quip.quip-loser', {}, l.final.loser) : null,
     playerList(l, { showScore: true }),
+    highscorePanel({ fixed: l.settings, highlight: l.final?.highscoreRank }),
     h('div.actions', {},
       isHost ? h('button.btn.btn-primary.btn-wide', { onclick: () => app.send('start') }, 'Nochmal, gleiche Einstellungen') : null,
       isHost ? h('button.btn.btn-ghost', { onclick: () => app.send('backToLobby') }, 'Einstellungen ändern') : null,

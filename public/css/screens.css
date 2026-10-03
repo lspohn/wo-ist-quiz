@@ -95,3 +95,34 @@
 .rank1 { animation-delay: 0.35s; } .rank2 { animation-delay: 0.15s; } .rank3 { animation-delay: 0s; }
 .quip { margin: 0; font-family: var(--display); font-style: italic; font-size: 1.35rem; line-height: 1.3; color: var(--paper); }
 .quip-loser { color: var(--paper-dim); font-size: 1.15rem; }
+
+/* ---------- Bestenliste ---------- */
+.highscores { display: flex; flex-direction: column; gap: 10px; }
+.hs-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.hs-tabgroup { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(239, 228, 204, 0.08); }
+.hs-tab { min-height: 40px; min-width: 52px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: var(--paper-dim); font-weight: 700; font-size: 0.9rem; cursor: pointer; }
+.hs-tab[aria-pressed='true'] { background: var(--gold); color: var(--ink); }
+.hs-tab:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.hs-list { list-style: none; margin: 0; padding: 0; border-radius: var(--radius); overflow: hidden; background: rgba(11, 22, 34, 0.72); border: 1px solid rgba(239, 228, 204, 0.1); }
+.hs-row {
+  display: grid; grid-template-columns: 2.2ch 1fr auto; grid-template-areas: 'rank name score' 'rank meta score';
+  column-gap: 12px; align-items: center; padding: 9px 14px; border-bottom: 1px solid rgba(239, 228, 204, 0.06);
+  animation: rise 0.4s both; animation-delay: calc(var(--i) * 40ms);
+}
+.hs-row:last-child { border-bottom: 0; }
+.hs-rank { grid-area: rank; font-family: var(--display); font-size: 1.6rem; color: var(--muted); text-align: center; }
+.hs-row:nth-child(1) .hs-rank { color: var(--gold); }
+.hs-row:nth-child(2) .hs-rank { color: #cfd8e3; }
+.hs-row:nth-child(3) .hs-rank { color: #d99a6c; }
+.hs-name { grid-area: name; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hs-meta { grid-area: meta; font-size: 0.78rem; color: var(--muted); }
+.hs-score { grid-area: score; font-family: var(--display); font-size: 1.45rem; }
+.hs-me { background: rgba(46, 230, 166, 0.14); box-shadow: inset 4px 0 0 var(--mint); }
+.hs-empty { padding: 16px; color: var(--muted); font-style: italic; text-align: center; }
+.hs-badge {
+  margin: 0; display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: var(--radius);
+  background: linear-gradient(120deg, rgba(46, 230, 166, 0.22), rgba(46, 230, 166, 0.05)); border: 1px solid rgba(46, 230, 166, 0.4);
+  font-weight: 700; animation: rise 0.5s 0.5s both;
+}
+.hs-badge small { display: block; font-weight: 500; color: var(--muted); font-size: 0.8rem; }
+.hs-badge-rank { font-family: var(--display); font-size: 2.6rem; line-height: 1; color: var(--mint); }

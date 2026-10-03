@@ -185,3 +185,20 @@ test('returning player becomes host when offline host grace expired', () => {
   lobby.setConnected('b', true);
   assert.equal(lobby.hostId, 'b');
 });
+
+test('finish reports highscore ranks per player in the view', () => {
+  const clock = fakeClock();
+  const lobby = new Lobby({
+    id: 'L2', hostId: 'a', settings: { rounds: 5 }, countries, clock, random: () => 0.3,
+    onFinish: (l) => ({ [l.standings()[0].id]: 1 }),
+  });
+  lobby.addPlayer({ id: 'a', name: 'Anna' });
+  lobby.start('a');
+  for (let r = 0; r < 5; r++) {
+    lobby.guess('a', lobby.round.target.i);
+    lobby.next('a');
+  }
+  assert.equal(lobby.phase, 'final');
+  assert.equal(lobbyView(lobby, 'a').final.highscoreRank, 1);
+  assert.equal(lobbyView(lobby, 'a').final.loser, null);
+});

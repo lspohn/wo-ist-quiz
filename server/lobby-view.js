@@ -55,7 +55,7 @@ export function lobbyView(lobby, playerId) {
     };
   }
   if (lobby.phase === 'final') {
-    view.final = lobby.finalComments;
+    view.final = { ...lobby.finalComments, highscoreRank: lobby.highscoreRanks[playerId] ?? null };
   }
   return view;
 }

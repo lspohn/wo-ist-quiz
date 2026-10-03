@@ -5,9 +5,11 @@ import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { WebSocketServer } from 'ws';
 import { loadCountries } from './geo.js';
+import { Highscores } from './highscores.js';
 import { Hub } from './hub.js';
 
 const PORT = Number(process.env.PORT ?? 7777);
+const DATA_DIR = process.env.DATA_DIR ?? fileURLToPath(new URL('../data/', import.meta.url));
 const PUBLIC_DIR = fileURLToPath(new URL('../public/', import.meta.url));
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -37,7 +39,8 @@ function loadStatic(dir) {
 }
 
 const files = loadStatic(PUBLIC_DIR);
-const hub = new Hub({ countries: loadCountries() });
+const highscores = new Highscores(join(DATA_DIR, 'highscores.json'));
+const hub = new Hub({ countries: loadCountries(), highscores });
 
 function pathOf(rawUrl) {
   try { return new URL(rawUrl, 'http://x').pathname; } catch { return null; }
@@ -48,6 +51,11 @@ const server = createServer((req, res) => {
   if (url === null) {
     res.writeHead(400, { 'content-type': 'text/plain' });
     res.end('Bad Request');
+    return;
+  }
+  if (url === '/api/highscores') {
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+    res.end(JSON.stringify(highscores.all()));
     return;
   }
   if (url === '/health') {

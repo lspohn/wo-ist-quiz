@@ -6,12 +6,13 @@ Mobile first (Chrome, Touch, Hoch- und Querformat), UI-Sprache Deutsch.
 ## Architektur
 
 - **Server** (`server/`, Node ≥ 22, nur Abhängigkeit `ws`): HTTP für statische Dateien (alles im RAM, gzip) + WebSocket `/ws`.
-  Zustand komplett im Speicher, keine DB.
+  Spielzustand komplett im Speicher; nur die Bestenliste wird als JSON-Datei gespeichert.
   - `hub.js` – Spieler-Identitäten (id + token), Lobby-Liste, Nachrichten-Routing
   - `lobby.js` – Zustandsmaschine `lobby → question ↔ reveal → final`, Timer, Host-Übergabe
   - `lobby-view.js` – Zustand pro Spieler serialisieren (fremde Tipps werden während der Frage nie verschickt)
   - `scoring.js` / `geo.js` – Punkte nach Grenz-zu-Grenz-Distanz (Haversine über gesampelte Grenzpunkte)
   - `comments.js` + `data/comments.js` – sarkastische Kommentare, keine Wiederholung innerhalb eines Spiels
+  - `highscores.js` – Top 10 pro Schwierigkeit × Rundenzahl, JSON-Datei in `$DATA_DIR` (Docker-Volume `laender-quiz-data`), `GET /api/highscores`
 - **Client** (`public/`, Vanilla-ES-Module, kein Build-Schritt): SVG-Weltkarte, eigene Pan/Pinch/Long-Press-Gesten.
   - Länder werden nur per Long-Press (550 ms) markiert und per Button bestätigt; Bewegung bricht den Press ab.
   - Die Karte enthält keine Ländernamen (nur numerische IDs), sonst könnte man schummeln.

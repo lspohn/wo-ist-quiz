@@ -25,7 +25,7 @@ test('comment pool has at least 100 strings and only known placeholders', () => 
 });
 
 test('categories without distance do not reference km', () => {
-  for (const cat of ['exact', 'neighbor', 'none', 'winner', 'loser']) {
+  for (const cat of ['exact', 'neighbor', 'none', 'winner', 'loser', 'solo']) {
     for (const s of COMMENTS[cat]) assert.ok(!s.includes('{km}'), s);
   }
 });

@@ -10,7 +10,8 @@ else git clone -q -b main /git/laender-quiz.git "$DIR"; fi
 cd "$DIR"
 docker build -q -t laender-quiz:latest .
 docker rm -f laender-quiz >/dev/null 2>&1 || true
-docker run -d --name laender-quiz --restart unless-stopped -p 7777:7777 laender-quiz:latest >/dev/null
+docker run -d --name laender-quiz --restart unless-stopped -p 7777:7777 \
+  -v laender-quiz-data:/app/data laender-quiz:latest >/dev/null
 sleep 2
 curl -fsS http://127.0.0.1:7777/health && echo " – läuft auf http://192.168.178.5:7777"
 REMOTE

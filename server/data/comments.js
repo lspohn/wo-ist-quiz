@@ -132,6 +132,14 @@ export const COMMENTS = {
     '{name} holt den Titel. Möge der Hochmut kurz und schmerzlos sein.',
     'Glückwunsch, {name}. Du hast gewonnen und trotzdem keine Ahnung, wo Tuvalu liegt. Oder doch?',
   ],
+  solo: [
+    'Solo gespielt, solo gewonnen. Gegen dich selbst verliert man halt nie – außer an Würde.',
+    '{name} gewinnt souverän gegen niemanden. Ein historischer Triumph.',
+    'Erster Platz von einem. Statistisch gesehen bist du auch Letzter.',
+    'Allein gespielt. Mutig – so hört wenigstens keiner das Fluchen.',
+    'Glückwunsch, {name}. Die Konkurrenz ist heute komplett nicht erschienen.',
+    'Einzelkämpfer {name}. Der Atlas ist dein einziger Freund, und er schweigt.',
+  ],
   loser: [
     '{name} wird Letzter. Es gibt Urlaubsziele, die sich vor dir verstecken.',
     'Letzter Platz für {name}. Immerhin ein Platz.',
