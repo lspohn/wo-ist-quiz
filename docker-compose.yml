@@ -1,0 +1,17 @@
+# Wo ist? – Selbst hosten im LAN/Intranet:  docker compose up -d --build
+name: wo-ist-quiz
+services:
+  wo-ist:
+    build: .
+    image: wo-ist-quiz:latest
+    container_name: wo-ist-quiz
+    restart: unless-stopped
+    ports:
+      - "7777:7777"        # links den gewünschten Port im Netz eintragen, z. B. "80:7777"
+    volumes:
+      - wo-ist-data:/app/data   # Bestenliste
+    environment:
+      - PORT=7777
+
+volumes:
+  wo-ist-data:

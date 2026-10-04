@@ -10,7 +10,7 @@ const levelLabel = (s) => modeOf(s).levels[levelOf(s.mode, s.difficulty)].label;
 function brand() {
   return h('header.brand', {},
     h('p.brand-kicker', {}, 'Ein Spiel für Leute, die nebeneinander sitzen'),
-    h('h1.brand-title', {}, 'Länder', h('span', {}, 'quiz')),
+    h('h1.brand-title', {}, 'Wo', h('span', {}, 'ist?')),
   );
 }
 

@@ -1,9 +1,11 @@
 {
-  "name": "laender-quiz",
+  "name": "wo-ist-quiz",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Multiplayer-Länderquiz fürs Heimnetz",
+  "description": "Wo ist? – Multiplayer-Kartenquiz für Leute, die nebeneinander sitzen",
+  "license": "AGPL-3.0-only",
+  "author": "Lucas Spohn",
   "scripts": {
     "start": "node server/index.js",
     "test": "node --test test/",

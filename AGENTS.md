@@ -1,7 +1,8 @@
-# Länderquiz
+# Wo ist? (wo-ist-quiz)
 
-Multiplayer-Länderquiz fürs Heimnetz. Läuft als Docker-Container auf dem Raspi (`192.168.178.5:7777`).
-Mobile first (Chrome, Touch, Hoch- und Querformat), UI-Sprache Deutsch.
+Multiplayer-Kartenquiz fürs Heimnetz/Intranet, als Docker-Container selbst gehostet (siehe `README.md`).
+Mobile first (Chrome/Safari, Touch, Hoch- und Querformat), UI-Sprache Deutsch.
+Lizenz: Code AGPL-3.0 (`LICENSE`), Texte CC BY 4.0 (`LICENSE-CONTENT.md`), Datenquellen in `QUELLEN.md`.
 
 ## Architektur
 
@@ -15,7 +16,7 @@ Mobile first (Chrome, Touch, Hoch- und Querformat), UI-Sprache Deutsch.
   - `modes.js` + `public/js/modes.js` (gemeinsame Konfiguration) – Varianten Welt, Europa, Europa-Städte,
     Deutschland, USA, Deutschland-Städte: Fragenpools, Hauptstadtfragen, Wertung (Flächen nach Grenzabstand, Städte nach km)
   - `deck.js` – gemischter Stapel pro Lobby/Variante, Wiederholung erst wenn alle Fragen dran waren
-  - `highscores.js` – Top 10 pro Schwierigkeit × Rundenzahl, JSON-Datei in `$DATA_DIR` (Docker-Volume `laender-quiz-data`), `GET /api/highscores`
+  - `highscores.js` – Top 10 pro Schwierigkeit × Rundenzahl, JSON-Datei in `$DATA_DIR` (Docker-Volume `wo-ist-data` bzw. `wo-ist-quiz-data`), `GET /api/highscores`
 - **Client** (`public/`, Vanilla-ES-Module, kein Build-Schritt): SVG-Weltkarte, eigene Pan/Pinch/Long-Press-Gesten.
   - Länder werden nur per Long-Press (550 ms) markiert und per Button bestätigt; Bewegung bricht den Press ab.
   - Die Karte enthält keine Ländernamen (nur numerische IDs), sonst könnte man schummeln.
@@ -49,5 +50,7 @@ npm test              # node:test – Scoring, Lobby-Zustandsmaschine, Kommentar
 
 ## Deploy
 
-`scripts/deploy.sh` pusht nach `raspi:/git/laender-quiz.git`, checkt auf dem Raspi nach `~/laender-quiz` aus,
-baut das Image nativ (arm64) und startet den Container `laender-quiz` (`--restart unless-stopped`, Port 7777).
+- Selbst hosten: `docker compose up -d --build` (Port 7777, Volume für die Bestenliste) – Details im README.
+- Eigenes Deployment per SSH: `scripts/deploy.sh` pusht auf ein Bare-Repo des Zielrechners (`DEPLOY_REMOTE`),
+  baut dort nativ und startet den Container `wo-ist-quiz` neu (`DEPLOY_HOST`, `DEPLOY_PORT`).
+  Übernimmt beim ersten Lauf die Bestenliste aus dem früheren Volume `laender-quiz-data`.

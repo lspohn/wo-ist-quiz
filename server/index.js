@@ -107,4 +107,4 @@ setInterval(() => {
 wss.on('error', (err) => console.error('ws server error', err));
 server.on('clientError', (_err, sock) => sock.destroy());
 
-server.listen(PORT, '0.0.0.0', () => console.log(`Länderquiz läuft auf Port ${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`Wo ist? läuft auf Port ${PORT}`));

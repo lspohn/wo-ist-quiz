@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { EUROPE_ISO, CAPITAL_OVERRIDES, LABEL_FALLBACK, EUROPE_BIG_CITIES } from './places-config.mjs';
 
 const OUT = (name) => fileURLToPath(new URL(`./data/${name}`, import.meta.url));
-const UA = 'laender-quiz/1.0 (privates Quiz, Build-Skript)';
+const UA = 'wo-ist-quiz/1.0 (privates Quiz, Build-Skript)';
 
 async function sparql(query) {
   const url = `https://query.wikidata.org/sparql?query=${encodeURIComponent(query)}`;
