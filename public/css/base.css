@@ -66,9 +66,8 @@ button { font: inherit; color: inherit; }
 .waters { pointer-events: none; }
 .river { fill: none; stroke: #4f9fd6; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; opacity: 0.85; }
 .river.r1 { stroke-width: 1.5; } .river.r2 { stroke-width: 0.95; } .river.r3 { stroke-width: 0.6; opacity: 0.7; }
-.no-rivers .waters { display: none; }
 .relief { pointer-events: none; }
-.no-relief .relief { display: none; }
+
 .lake { fill: #2f6f9e; stroke: #4f9fd6; stroke-width: 0.6; vector-effect: non-scaling-stroke; }
 .point-mode .country { pointer-events: none; }
 .city { fill: #0b1622; stroke: var(--paper); stroke-width: 1.4; vector-effect: non-scaling-stroke; transition: fill 0.2s; }

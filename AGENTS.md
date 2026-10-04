@@ -45,7 +45,7 @@ Zielländer und der Pool „mittel“ stehen in `scripts/countries-config.mjs`.
 
 ## Einstellungen
 
-Zeit 15/30/45 s, Runden 5/10/15, Auflösung 20 s. Kartenebenen `rivers`/`relief` (Lobby-Schalter, gelten für alle).
+Zeit 15/30/45 s, Runden 5/10/15, Auflösung 20 s. Flüsse, Seen und Gebirgsrelief sind immer eingeblendet.
 Stufen haben in `public/js/modes.js` ein `label` und eine kurze Zeile `sub` (wird im Auswahlknopf gezeigt);
 interne Schlüssel bleiben `mittel`/`schwer`/`sehrschwer`, damit Bestenlisten-Schlüssel stabil sind.
 

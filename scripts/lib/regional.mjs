@@ -33,9 +33,12 @@ export const inBox = (box) => (f) => {
   });
 };
 
-/** Zuschneiden (optional) und vereinfachen via mapshaper; Ringe für d3 ausrichten. */
+/**
+ * Zuschneiden (optional) und vereinfachen via mapshaper; Ringe für d3 ausrichten.
+ * `weighted`: Visvalingam mit Winkelgewichtung – schmale Spitzen fallen zuerst weg.
+ */
 export async function shape(features, simplify, clip = null) {
-  const cmd = `-i in.json ${clip ? `-clip bbox=${clip.join(',')}` : ''} ${simplify ? `-simplify ${simplify} keep-shapes planar` : ''} -o out.json format=geojson`;
+  const cmd = `-i in.json ${clip ? `-clip bbox=${clip.join(',')}` : ''} ${simplify ? `-simplify ${simplify} weighted keep-shapes` : ''} -o out.json format=geojson`;
   const out = await mapshaper.applyCommands(cmd, { 'in.json': { type: 'FeatureCollection', features } });
   return JSON.parse(out['out.json']).features.map(rewind);
 }
@@ -97,4 +100,35 @@ export async function loadVg1000States() {
     `-i "${shp}" encoding=utf8 -filter "GF == 4" -dissolve2 GEN -proj wgs84 -o out.json format=geojson`,
   );
   return JSON.parse(out['out.json']).features.map(rewind);
+}
+
+/**
+ * Chaikin-Glättung („corner cutting“): jede Ecke wird durch zwei Punkte bei ¼ und ¾ der
+ * Nachbarkanten ersetzt. Nur für Gewässer – bei Grenzen entstünden Lücken zwischen Nachbarn.
+ */
+export function smooth(feature, iterations = 2) {
+  const cut = (pts, closed) => {
+    let out = pts;
+    for (let k = 0; k < iterations; k++) {
+      const next = closed ? [] : [out[0]];
+      const n = closed ? out.length - 1 : out.length - 1;
+      for (let i = 0; i < n; i++) {
+        const [a, b] = [out[i], out[i + 1]];
+        next.push([0.75 * a[0] + 0.25 * b[0], 0.75 * a[1] + 0.25 * b[1]], [0.25 * a[0] + 0.75 * b[0], 0.25 * a[1] + 0.75 * b[1]]);
+      }
+      if (closed) next.push(next[0]);
+      else next.push(out[out.length - 1]);
+      out = next;
+    }
+    return out.map(([x, y]) => [+x.toFixed(5), +y.toFixed(5)]);
+  };
+  const g = feature.geometry;
+  if (!g) return feature;
+  const map = {
+    LineString: (c) => cut(c, false),
+    MultiLineString: (c) => c.map((l) => cut(l, false)),
+    Polygon: (c) => c.map((r) => cut(r, true)),
+    MultiPolygon: (c) => c.map((p) => p.map((r) => cut(r, true))),
+  }[g.type];
+  return map ? { ...feature, geometry: { ...g, coordinates: map(g.coordinates) } } : feature;
 }

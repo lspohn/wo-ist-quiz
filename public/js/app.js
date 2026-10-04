@@ -91,7 +91,7 @@ function render() {
   }
   if (lastScreen === 'question' || lastScreen === 'reveal') game.hide();
   // Hintergrundkarte zeigt die gewählte Variante
-  map.use(mapConfig(l?.settings)).then(() => map.setLayers(l?.settings ?? {})).catch(() => {});
+  map.use(mapConfig(l?.settings)).catch(() => {});
   const focused = document.activeElement?.id;
   const view = phase === 'home' ? homeScreen(app) : phase === 'final' ? finalScreen(app) : roomScreen(app);
   screenEl.hidden = false;

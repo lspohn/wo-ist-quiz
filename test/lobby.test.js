@@ -35,10 +35,8 @@ function setup(settings = { rounds: 5, timeLimit: 15 }) {
 
 test('sanitizeSettings rejects unknown values', () => {
   assert.deepEqual(sanitizeSettings({ difficulty: 'leicht', timeLimit: 40, rounds: 15 }),
-    { mode: 'welt', difficulty: 'mittel', timeLimit: 30, rounds: 15, rivers: true, relief: true });
+    { mode: 'welt', difficulty: 'mittel', timeLimit: 30, rounds: 15 });
   assert.equal(sanitizeSettings({ timeLimit: 45 }).timeLimit, 45);
-  assert.deepEqual([sanitizeSettings({ rivers: false }).rivers, sanitizeSettings({ relief: false }).relief], [false, false]);
-  assert.equal(sanitizeSettings({ rivers: 'nein' }).rivers, true);
   assert.equal(sanitizeSettings({ mode: 'de-staedte', difficulty: 'sehrschwer' }).difficulty, 'sehrschwer');
   assert.equal(sanitizeSettings({ mode: 'welt', difficulty: 'sehrschwer' }).difficulty, 'mittel');
   assert.equal(sanitizeSettings({ mode: 'mond' }).mode, 'welt');

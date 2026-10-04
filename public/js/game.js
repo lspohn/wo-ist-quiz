@@ -164,7 +164,6 @@ export function createGame(app, map) {
       // Karte erst auf die Variante umstellen (lädt ggf. Daten), dann zeichnen
       map.use(mapConfig(l.settings)).then(() => {
         if (latest !== l) return;
-        map.setLayers(l.settings);
         const key = `${l.id}:${l.roundKey}:${l.phase}`;
         const fresh = key !== roundKey;
         roundKey = key;

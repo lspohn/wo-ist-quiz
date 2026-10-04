@@ -3,7 +3,7 @@
 import { writeFileSync } from 'node:fs';
 import { geoAlbers, geoAlbersUsa, geoPath } from 'd3-geo';
 import { US_CAPITALS, US_NAME_OVERRIDES } from './places-config.mjs';
-import { file, inBox as inBoxOf, load, neighborsOf, round1, samplePoints, shape } from './lib/regional.mjs';
+import { file, inBox as inBoxOf, load, neighborsOf, round1, samplePoints, shape, smooth } from './lib/regional.mjs';
 
 const WIDTH = 1000;
 const PAD = 30;
@@ -22,8 +22,8 @@ const context = await shape((await load('ne10')).features.filter((f) => ['CA', '
 // Gewässer nur im Festland-Rahmen – sie liegen über den Staaten und dürfen nicht in die Einschübe ragen
 const rivers = await shape((await load('ne_10m_rivers_lake_centerlines')).features
   .filter((f) => (f.properties.scalerank ?? 10) <= 7 && inBoxOf(MAINLAND)(f)), null, MAINLAND);
-const lakes = await shape((await load('ne_10m_lakes')).features
-  .filter((f) => (f.properties.scalerank ?? 10) <= 4 && inBoxOf(MAINLAND)(f)), '30%', MAINLAND);
+const lakes = (await shape((await load('ne_10m_lakes')).features
+  .filter((f) => (f.properties.scalerank ?? 10) <= 4 && inBoxOf(MAINLAND)(f)), '50%', MAINLAND)).map((f) => smooth(f));
 
 const stateFc = { type: 'FeatureCollection', features: states };
 const projection = geoAlbersUsa().fitWidth(WIDTH - 2 * PAD, stateFc);

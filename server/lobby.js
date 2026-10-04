@@ -8,7 +8,7 @@ export const SETTINGS_OPTIONS = {
   timeLimit: [15, 30, 45],
   rounds: [5, 10, 15],
 };
-export const DEFAULT_SETTINGS = { mode: 'welt', difficulty: 'mittel', timeLimit: 30, rounds: 10, rivers: true, relief: true };
+export const DEFAULT_SETTINGS = { mode: 'welt', difficulty: 'mittel', timeLimit: 30, rounds: 10 };
 export const MAX_PLAYERS = 12;
 export const REVEAL_MS = 20_000;
 export const HOST_GRACE_MS = 15_000;
@@ -25,8 +25,6 @@ export function sanitizeSettings(input = {}, base = DEFAULT_SETTINGS) {
   for (const [key, allowed] of Object.entries(SETTINGS_OPTIONS)) {
     if (allowed.includes(input[key])) out[key] = input[key];
   }
-  // Kartenebenen (Flüsse, Relief) sind einfache Schalter
-  for (const key of ['rivers', 'relief']) if (typeof input[key] === 'boolean') out[key] = input[key];
   // Schwierigkeit hängt vom Modus ab; ungültige fallen auf die erste Stufe zurück
   out.difficulty = levelOf(out.mode, input.difficulty ?? out.difficulty);
   return out;

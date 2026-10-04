@@ -4,7 +4,7 @@
 // damit der Server unverändert mit der Welt-Antwortmenge arbeitet.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { geoArea, geoConicConformal, geoPath } from 'd3-geo';
-import { file, inBox as inBoxOf, load, round1, shape } from './lib/regional.mjs';
+import { file, inBox as inBoxOf, load, round1, shape, smooth } from './lib/regional.mjs';
 
 const WIDTH = 1200;
 // Sichtbarer Ausschnitt (wird als Rechteck in Bildschirmkoordinaten zugeschnitten):
@@ -31,8 +31,11 @@ const clipped = await shape(picked.map(({ f, i }) => ({ ...f, properties: { i } 
 // Flüsse unvereinfacht – Natural Earth ist hier ohnehin schon grob
 const rivers = await shape((await load('ne_10m_rivers_lake_centerlines')).features
   .filter((f) => (f.properties.scalerank ?? 10) <= 7 && inBox(f)), null, BOX);
-const lakes = await shape((await load('ne_10m_lakes')).features
-  .filter((f) => (f.properties.scalerank ?? 10) <= 5 && inBox(f)), '40%', BOX);
+// Seen aus beiden Natural-Earth-Sätzen (der Europa-Satz ist deutlich detaillierter), unvereinfacht, geglättet
+const lakes = (await shape([
+  ...(await load('ne_10m_lakes')).features.filter((f) => (f.properties.scalerank ?? 10) <= 5),
+  ...(await load('ne_10m_lakes_europe')).features.filter((f) => (f.properties.scalerank ?? 10) <= 7),
+].filter(inBox), '40%', BOX)).map((f) => smooth(f));
 
 const frame = { type: 'Feature', geometry: { type: 'MultiPoint', coordinates: VIEW } };
 const projection = geoConicConformal().parallels([40, 65]).rotate([-12, 0]).fitWidth(WIDTH, frame);

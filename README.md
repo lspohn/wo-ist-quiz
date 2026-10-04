@@ -10,7 +10,7 @@ Auflösung und einen frechen Kommentar.
   versehentliches Antippen), Hoch- und Querformat, Fanghilfe für Kleinstaaten.
 - **Mehrspieler im LAN:** Lobby eröffnen, die anderen sehen sie und steigen ein; auch allein spielbar.
 - **Wertung nach Entfernung:** exakter Treffer, Nachbarland, knapp daneben … mit Tempobonus.
-- **Orientierung:** Flüsse, Seen und Gebirgsrelief, in der Lobby einzeln abschaltbar.
+- **Orientierung:** Flüsse, Seen und Gebirgsrelief auf den Karten.
 - **Bestenliste**, Gesamtwertung über mehrere Spiele, Flaggen, über 250 Kommentare.
 - **Läuft komplett offline im Intranet:** keine Konten, keine Cookies, keine externen Dienste, keine Datenbank.
 

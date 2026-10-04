@@ -67,7 +67,7 @@ function samplePoints(geom) {
 }
 
 const simplified = await mapshaper.applyCommands(
-  `-i in.json -simplify ${SIMPLIFY} keep-shapes planar -o out.json format=geojson`,
+  `-i in.json -simplify ${SIMPLIFY} weighted keep-shapes -o out.json format=geojson`,
   { 'in.json': { type: 'FeatureCollection', features } },
 );
 const simple = JSON.parse(simplified['out.json']).features.map(rewind);

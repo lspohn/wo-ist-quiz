@@ -108,20 +108,6 @@ function podiumHeight(score, scores) {
   return Math.round(44 + 96 * ((score - base) / (max - base)));
 }
 
-// Kartenebenen als Schalter – gelten für alle in der Lobby
-function mapToggles(s, isHost, set) {
-  const toggle = (key, label) => h('button.toggle', {
-    role: 'switch',
-    'aria-checked': String(s[key] !== false),
-    disabled: !isHost,
-    onclick: () => set({ [key]: s[key] === false }),
-  }, h('span.toggle-knob', {}), label);
-  return h('div.setting', {},
-    h('span.setting-label', {}, 'Orientierung auf der Karte'),
-    h('div.toggles', {}, toggle('rivers', 'Flüsse & Seen'), toggle('relief', 'Gebirge (Relief)')),
-  );
-}
-
 function modePicker(s, isHost, set) {
   return h('section.modes', { role: 'radiogroup', 'aria-label': 'Spielvariante' },
     h('h2.section-title', {}, 'Variante'),
@@ -152,7 +138,6 @@ export function roomScreen(app) {
       segmented('Zeit pro Runde', 'timeLimit', [[15, '15 s'], [30, '30 s'], [45, '45 s']], s.timeLimit, isHost, set),
       segmented('Runden', 'rounds', [[5, '5'], [10, '10'], [15, '15']], s.rounds, isHost, set),
       h('p.hint', {}, modeOf(s).levels[levelOf(s.mode, s.difficulty)].hint),
-      mapToggles(s, isHost, set),
     ),
     h('section', {},
       h('h2.section-title', {}, `Mitspieler (${l.players.length})`),

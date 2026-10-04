@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { geoConicConformal, geoContains, geoDistance, geoPath } from 'd3-geo';
 import { STATE_CAPITALS } from './places-config.mjs';
-import { file, inBox as inBoxOf, load, loadVg1000States, neighborsOf, round1 as round, samplePoints, shape } from './lib/regional.mjs';
+import { file, inBox as inBoxOf, load, loadVg1000States, neighborsOf, round1 as round, samplePoints, shape, smooth } from './lib/regional.mjs';
 
 const WIDTH = 1000;
 const PAD = 70;
@@ -19,11 +19,12 @@ const neighbors = neighborsOf(rawStates);
 
 const states = await shape(rawStates, process.env.DE_SIMPLIFY ?? '35%');
 const context = await shape((await load('ne10')).features.filter((f) => f.properties.ISO_A2_EH !== 'DE' && inBox(f)), '60%', CLIP);
+// Gewässer unvereinfacht und geglättet (keine Ecken/Spitzen bei starkem Zoom)
 const rivers = await shape([
   ...(await load('ne_10m_rivers_lake_centerlines')).features.filter(inBox),
   ...(await load('ne_10m_rivers_europe')).features.filter(inBox),
 ], null, CLIP);
-const lakes = await shape([...(await load('ne_10m_lakes')).features, ...(await load('ne_10m_lakes_europe')).features].filter(inBox), '40%', CLIP);
+const lakes = (await shape([...(await load('ne_10m_lakes')).features, ...(await load('ne_10m_lakes_europe')).features].filter(inBox), '50%', CLIP)).map((f) => smooth(f));
 
 const stateFc = { type: 'FeatureCollection', features: states };
 const projection = geoConicConformal().parallels([48.5, 53.5]).rotate([-10.4, 0]).fitWidth(WIDTH - 2 * PAD, stateFc);

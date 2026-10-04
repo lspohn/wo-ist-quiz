@@ -21,7 +21,6 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
   let point = { pointEls: new Map(), points: [] };
   let kind = 'area';
   let configKey = '';
-  let layerCfg = { rivers: true, relief: true };
   let using = Promise.resolve();
   let minK = 1;
   let maxK = 80;
@@ -153,6 +152,16 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
     }
   }
 
+  // Gebirgsrelief unter Flüssen und Grenzpunkten, über den Landflächen
+  function addRelief() {
+    if (!layers || world.querySelector('.relief')) return;
+    const img = svgEl('image', {
+      href: `/relief/${ds.name}.webp`, x: 0, y: 0, width: ds.w, height: ds.h, class: 'relief', preserveAspectRatio: 'none',
+    });
+    img.addEventListener('error', () => img.remove());
+    world.insertBefore(img, layers.waters);
+  }
+
   gestures = attachGestures(svg, view, {
     onLongPressStart,
     onLongPressCancel,
@@ -193,7 +202,7 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
         svg.classList.toggle('regional', ds.name !== 'world');
         point = buildPointLayer(layers, { rivers: extras.rivers, cities: extras.cities, maxTier: cfg.maxTier });
         radiusK = 0;
-        api.setLayers(layerCfg);
+        addRelief();
         api.clearAll();
         fitAll();
       })();
@@ -232,19 +241,6 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
       overlay.setLines([]);
     },
     resetGestures: () => gestures.reset(),
-    /** Orientierungsebenen ein-/ausblenden; das Relief-Bild wird erst bei Bedarf geladen. */
-    setLayers({ rivers = true, relief = true } = {}) {
-      layerCfg = { rivers, relief };
-      svg.classList.toggle('no-rivers', !rivers);
-      svg.classList.toggle('no-relief', !relief);
-      if (relief && layers && !world.querySelector('.relief')) {
-        const img = svgEl('image', {
-          href: `/relief/${ds.name}.webp`, x: 0, y: 0, width: ds.w, height: ds.h, class: 'relief', preserveAspectRatio: 'none',
-        });
-        img.addEventListener('error', () => img.remove());
-        world.insertBefore(img, layers.waters);
-      }
-    },
     setInteractive: (on) => svg.classList.toggle('readonly', !on),
   };
   await api.use({ map: 'world', kind: 'area' });
