@@ -125,3 +125,6 @@
 }
 .hud-leave.armed { background: var(--danger); border-color: var(--danger); color: #fff; }
 .hud-leave:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+/* Quellenvermerk der Karte (Pflicht für BKG-Daten) */
+.map-credit { margin: 10px 0 0; font-size: 0.68rem; color: rgba(159, 176, 194, 0.7); text-align: center; letter-spacing: 0.01em; }

@@ -1,5 +1,6 @@
 // Gemeinsame Bausteine für Regionalkarten (Deutschland, USA): Quellen laden, zuschneiden,
 // vereinfachen, Nachbarn aus gemeinsamen Stützpunkten, Grenzpunkte für die Distanzwertung.
+import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -74,3 +75,26 @@ export function samplePoints(geometry, max = 400) {
 }
 
 export const round1 = (v) => Math.round(v * 10) / 10;
+
+const VG1000_URL = 'https://daten.gdz.bkg.bund.de/produkte/vg/vg1000_ebenen_0101/aktuell/vg1000_01-01.utm32s.shape.ebenen.zip';
+
+/**
+ * Bundesländer aus BKG VG1000 (© GeoBasis-DE / BKG, Datenlizenz Deutschland – Namensnennung 2.0),
+ * Landflächen (GF 4) je Land zusammengefasst und nach WGS84 umprojiziert.
+ */
+export async function loadVg1000States() {
+  const dir = file('.cache/vg1000');
+  const shp = `${dir}/vg1000_01-01.utm32s.shape.ebenen/vg1000_ebenen_0101/VG1000_LAN.shp`;
+  if (!existsSync(shp)) {
+    mkdirSync(dir, { recursive: true });
+    const res = await fetch(VG1000_URL);
+    if (!res.ok) throw new Error(`Download VG1000 fehlgeschlagen: ${res.status}`);
+    const zip = `${dir}.zip`;
+    writeFileSync(zip, Buffer.from(await res.arrayBuffer()));
+    execFileSync('unzip', ['-o', '-q', zip, '-d', dir]);
+  }
+  const out = await mapshaper.applyCommands(
+    `-i "${shp}" encoding=utf8 -filter "GF == 4" -dissolve2 GEN -proj wgs84 -o out.json format=geojson`,
+  );
+  return JSON.parse(out['out.json']).features.map(rewind);
+}

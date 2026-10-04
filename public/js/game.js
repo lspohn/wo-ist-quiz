@@ -2,7 +2,7 @@
 import { h, toast, flag, noted, fill } from './dom.js';
 import { renderRevealPanel, showRevealOnMap } from './reveal.js';
 import { leaveButton } from './leave.js';
-import { MODES, PROMPTS, mapConfig } from './modes.js';
+import { MAP_CREDITS, MODES, PROMPTS, mapConfig } from './modes.js';
 
 const MISS_QUIPS = {
   area: ['Das ist Wasser.', 'Ozean. Nicht wählbar, auch wenn er sich schön anfühlt.', 'Da schwimmen nur Fische.'],
@@ -67,6 +67,10 @@ export function createGame(app, map) {
     );
   }
 
+  function credit(l) {
+    return h('p.map-credit', {}, MAP_CREDITS[mapConfig(l.settings).map] ?? MAP_CREDITS.world);
+  }
+
   function renderPickSheet(l, q) {
     sheet.hidden = false;
     sheet.className = 'sheet sheet-pick';
@@ -75,6 +79,7 @@ export function createGame(app, map) {
       fill(sheet, 
         h('p.sheet-title', {}, 'Tipp ist drin.'),
         h('p.sheet-sub', {}, waiting.length ? `Warte auf ${waiting.join(', ')} …` : 'Gleich gibt’s die Auflösung.'),
+        credit(l),
       );
       return;
     }
@@ -82,6 +87,7 @@ export function createGame(app, map) {
     if (candidate == null) {
       fill(sheet, 
         h('p.sheet-hint', {}, h('span.hold-icon', {}), h('span', {}, isPoint ? 'Stadt ' : 'Land ', h('strong', {}, 'gedrückt halten'), isPoint ? ', um sie zu markieren' : ', um es zu markieren')),
+        credit(l),
       );
       return;
     }

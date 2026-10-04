@@ -1,6 +1,7 @@
 // Auflösung: Karte (Ziel pulsiert, Tipps in Spielerfarben mit Linien) und Ergebnistabelle.
 import { h, fmt, flag, noted, fill, CATEGORY_LABEL } from './dom.js';
 import { leaveButton } from './leave.js';
+import { MAP_CREDITS, mapConfig } from './modes.js';
 
 const initials = (name) => name.trim().slice(0, 2);
 
@@ -54,6 +55,7 @@ export function renderRevealPanel({ l, hud, sheet, app }) {
           rv.last ? 'Zum Endstand' : 'Nächste Runde', h('span.auto-next', {}, ''))
         : h('p.waiting', {}, rv.last ? 'Gleich kommt der Endstand · ' : 'Nächste Runde in ', h('span.auto-next', {}, '')),
     ),
+    h('p.map-credit', {}, MAP_CREDITS[mapConfig(l.settings).map] ?? MAP_CREDITS.world),
   );
 }
 

@@ -17,7 +17,7 @@ const rawStates = (await load('ne_10m_admin_1_states_provinces')).features
   .sort((a, b) => a.properties.de.localeCompare(b.properties.de, 'de'));
 const neighbors = neighborsOf(rawStates);
 
-const states = await shape(rawStates, '12%');
+const states = await shape(rawStates, process.env.US_SIMPLIFY ?? '40%');
 const context = await shape((await load('ne10')).features.filter((f) => ['CA', 'MX', 'CU', 'BS'].includes(f.properties.ISO_A2_EH)), '10%', CLIP);
 // Gewässer nur im Festland-Rahmen – sie liegen über den Staaten und dürfen nicht in die Einschübe ragen
 const rivers = await shape((await load('ne_10m_rivers_lake_centerlines')).features
@@ -33,7 +33,7 @@ const height = Math.ceil(y1 - y0 + 2 * PAD);
 const path = geoPath(projection).digits(1);
 // Kontext (Kanada, Mexiko, Flüsse, Seen) mit der ungeschnittenen Festland-Projektion –
 // sonst entstehen harte Kanten und Kanada-/Mexiko-Stücke in den Einschüben
-const mainland = geoAlbers().scale(projection.scale()).translate(projection.translate());
+const mainland = geoAlbers().scale(projection.scale()).translate(projection.translate()).clipExtent([[0, 0], [WIDTH, height]]);
 const ctxPath = geoPath(mainland).digits(1);
 
 const stateMeta = rawStates.map((f, i) => {

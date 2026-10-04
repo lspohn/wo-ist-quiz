@@ -12,7 +12,8 @@ export const svgEl = (tag, attrs = {}) => {
 
 function fetchJson(url) {
   if (!cache.has(url)) {
-    const p = fetch(url).then((r) => {
+    // no-cache: auch einen alten, noch „frischen“ Browser-Cache immer per ETag prüfen
+    const p = fetch(url, { cache: 'no-cache' }).then((r) => {
       if (!r.ok) throw new Error(`${url}: ${r.status}`);
       return r.json();
     });
@@ -23,22 +24,17 @@ function fetchJson(url) {
   return cache.get(url);
 }
 
-/** Normalised dataset: { w, h, areas, views, decor, cities } */
+/** Normalised dataset: { w, h, areas, decor, cities } */
 export async function loadDataset(name) {
-  if (name === 'germany' || name === 'usa') {
+  if (name === 'germany' || name === 'usa' || name === 'europe') {
     const g = await fetchJson(`/data/${name}.json`);
     return {
-      name, w: g.w, h: g.h, views: {}, areas: g.states, cities: g.cities,
+      name, w: g.w, h: g.h, areas: g.states, cities: g.cities ?? [],
       decor: { context: g.context, rivers: g.rivers, lakes: g.lakes, insets: g.insets },
     };
   }
   const m = await fetchJson('/data/map.json');
-  return { name, w: m.w, h: m.h, views: m.views ?? {}, areas: m.c, cities: null, decor: { graticule: m.graticule, outline: m.outline } };
-}
-
-/** Rivers and cities for the Europe city variant (world coordinates). */
-export function loadEuropeExtras() {
-  return fetchJson('/data/europe.json');
+  return { name, w: m.w, h: m.h, areas: m.c, cities: [], decor: { graticule: m.graticule, outline: m.outline } };
 }
 
 /** Build the static layers of a dataset into `world`; returns lookup structures. */

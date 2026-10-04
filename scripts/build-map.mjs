@@ -156,38 +156,11 @@ const outline = geoPath(projection).digits(0)({ type: 'Sphere' });
 
 mkdirSync(fileURLToPath(new URL('../public/data/', import.meta.url)), { recursive: true });
 mkdirSync(fileURLToPath(new URL('../server/data/', import.meta.url)), { recursive: true });
-// Europa: Ausschnitt, Flüsse und Städte im Weltkarten-Koordinatensystem
-const EU_BOX = [-25, 34, 45, 71.5];
-const euView = [projection([EU_BOX[0], EU_BOX[3]]), projection([EU_BOX[2], EU_BOX[1]]), projection([EU_BOX[0], EU_BOX[1]]), projection([EU_BOX[2], EU_BOX[3]])];
-const views = {
-  europe: [
-    Math.round(Math.min(...euView.map((p) => p[0]))), Math.round(Math.min(...euView.map((p) => p[1]))),
-    Math.round(Math.max(...euView.map((p) => p[0]))), Math.round(Math.max(...euView.map((p) => p[1]))),
-  ],
-};
-const RIVERS = fileURLToPath(new URL('../.cache/ne_10m_rivers_lake_centerlines.geojson', import.meta.url));
-if (!existsSync(RIVERS)) writeFileSync(RIVERS, await (await fetch(SRC_URL.replace(/ne_\w+_admin_0_countries/, 'ne_10m_rivers_lake_centerlines'))).text());
-const euRiversRaw = JSON.parse(readFileSync(RIVERS, 'utf8'))
-  .features.filter((f) => f.geometry && (f.properties.scalerank ?? 10) <= 7);
-const euRiversOut = await mapshaper.applyCommands(
-  `-i in.json -clip bbox=${EU_BOX.join(',')} -simplify 30% planar -o out.json format=geojson`,
-  { 'in.json': { type: 'FeatureCollection', features: euRiversRaw } },
-);
-const euRivers = JSON.parse(euRiversOut['out.json']).features
-  .map((f) => ({ d: path(f), r: (f.properties.scalerank ?? 10) <= 4 ? 1 : 2 })).filter((r) => r.d);
-const isoName = new Map(meta.filter((m) => m.target).map((m) => [m.iso, m.name]));
-const euCities = JSON.parse(readFileSync(fileURLToPath(new URL('./data/cities-eu.json', import.meta.url)), 'utf8'))
-  .map((c, i) => ({ i, name: c.name, iso: c.iso, country: isoName.get(c.iso) ?? c.iso, capital: c.capital, pop: c.pop, lat: c.lat, lon: c.lon }));
-const euMapCities = euCities.map((c) => {
-  const [x, y] = projection([c.lon, c.lat]);
-  return { i: c.i, x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100, t: c.capital ? 1 : 2 };
-});
-writeFileSync(fileURLToPath(new URL('../public/data/europe.json', import.meta.url)), JSON.stringify({ rivers: euRivers, cities: euMapCities }));
-writeFileSync(fileURLToPath(new URL('../server/data/eu-cities.json', import.meta.url)), JSON.stringify(euCities));
+// Länder der Europa-Varianten (Karte selbst: scripts/build-europe.mjs)
 for (const m of meta) m.europe = m.target && EUROPE_ISO.includes(m.iso);
-console.log(`Europa: ${meta.filter((m) => m.europe).length} Länder, ${euCities.length} Städte, ${euRivers.length} Flüsse`);
+console.log(`Europa: ${meta.filter((m) => m.europe).length} Länder`);
 
-const mapJson = JSON.stringify({ w: WIDTH, h: height, graticule, outline, views, c: mapCountries });
+const mapJson = JSON.stringify({ w: WIDTH, h: height, graticule, outline, c: mapCountries });
 writeFileSync(MAP_OUT, mapJson);
 writeFileSync(META_OUT, JSON.stringify(meta));
 

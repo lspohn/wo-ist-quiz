@@ -15,8 +15,7 @@ export const MODES = {
   europa: {
     label: 'Europa',
     blurb: 'Länder & Hauptstädte',
-    map: 'world',
-    view: 'europe',
+    map: 'europe',
     kind: 'area',
     levels: {
       mittel: { label: 'Mittel', hint: 'Alle 47 Länder Europas.' },
@@ -26,10 +25,8 @@ export const MODES = {
   'europa-staedte': {
     label: 'Europa · Städte',
     blurb: 'Stadt auf der Karte finden',
-    map: 'world',
-    view: 'europe',
+    map: 'europe',
     kind: 'point',
-    points: 'europe',
     scaleKm: 300,
     levels: {
       mittel: { label: 'Mittel', hint: 'Die Hauptstädte Europas.', maxTier: 1 },
@@ -61,7 +58,6 @@ export const MODES = {
     blurb: 'Stadt auf der Karte finden',
     map: 'germany',
     kind: 'point',
-    points: 'germany',
     scaleKm: 45,
     levels: {
       mittel: { label: 'Mittel', hint: 'Großstädte ab 100.000 Einwohnern (79).', maxTier: 1 },
@@ -83,8 +79,16 @@ export function levelOf(mode, difficulty) {
 export function mapConfig(settings = {}) {
   const mode = MODES[settings.mode] ? settings.mode : 'welt';
   const m = MODES[mode];
-  return { map: m.map, view: m.view, kind: m.kind, points: m.points, maxTier: m.levels[levelOf(mode, settings.difficulty)].maxTier };
+  return { map: m.map, kind: m.kind, maxTier: m.levels[levelOf(mode, settings.difficulty)].maxTier };
 }
+
+/** Quellenvermerk je Karte (Datenlizenz Deutschland verlangt ihn sichtbar bei der Karte). */
+export const MAP_CREDITS = {
+  world: 'Karte: Natural Earth',
+  europe: 'Karte: Natural Earth',
+  usa: 'Karte: Natural Earth',
+  germany: 'Karte: © GeoBasis-DE / BKG (2026), Natural Earth',
+};
 
 export const PROMPTS = {
   where: 'Wo liegt',

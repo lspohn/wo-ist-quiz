@@ -2,7 +2,7 @@
 import { attachGestures } from './gestures.js';
 import { createOverlay } from './map-overlay.js';
 import { createPicker, pickPoint } from './map-pick.js';
-import { buildAreaLayers, buildPointLayer, loadDataset, loadEuropeExtras, svgEl } from './map-data.js';
+import { buildAreaLayers, buildPointLayer, loadDataset, svgEl } from './map-data.js';
 
 const DOT_SCREEN_PX = 16;
 const MARK_CLASSES = ['candidate', 'locked', 'target', 'guessed'];
@@ -20,7 +20,6 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
   let layers = null;
   let point = { pointEls: new Map(), points: [] };
   let kind = 'area';
-  let viewBox = null;
   let configKey = '';
   let using = Promise.resolve();
   let minK = 1;
@@ -87,7 +86,7 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
     gestures?.stopInertia();
     if (!ds) return;
     const { W, H } = size();
-    const b = viewBox ?? [0, 0, ds.w, ds.h];
+    const b = [0, 0, ds.w, ds.h];
     const bw = b[2] - b[0];
     const bh = b[3] - b[1];
     const fit = Math.min(W / bw, H / bh);
@@ -96,7 +95,7 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
     maxK = fullFit * 120;
     // Hochkant die Welt etwas reinzoomen, damit Länder nicht winzig sind
     let k = fit;
-    if (W < H && ds.name === 'world') k = viewBox ? Math.min((H * 0.62) / bh, fit * 1.9) : Math.min(H / bh, fit * 2.2);
+    if (W < H && ds.name === 'world') k = Math.min(H / bh, fit * 2.2);
     s.k = k;
     s.x = (W - bw * k) / 2 - b[0] * k;
     s.y = (H - bh * k) / 2 - b[1] * k;
@@ -167,9 +166,9 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
   }).observe(host);
 
   const api = {
-    /** Switch to a variant: { map: 'world'|'germany', view?: 'europe', kind, points?, maxTier } */
+    /** Switch to a variant: { map: 'world'|'europe'|'germany'|'usa', kind, maxTier } */
     use(cfg) {
-      const key = `${cfg.map}|${cfg.view ?? ''}|${cfg.kind}|${cfg.maxTier ?? ''}`;
+      const key = `${cfg.map}|${cfg.kind}|${cfg.maxTier ?? ''}`;
       if (key === configKey) return using;
       configKey = key;
       using = (async () => {
@@ -178,9 +177,7 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
         let extras;
         try {
           next = await loadDataset(cfg.map);
-          extras = cfg.kind === 'point'
-            ? (cfg.points === 'europe' ? await loadEuropeExtras() : { cities: next.cities, rivers: null })
-            : { cities: [], rivers: null };
+          extras = { cities: cfg.kind === 'point' ? next.cities : [], rivers: null };
         } catch (err) {
           if (configKey === key) configKey = '';
           throw err;
@@ -191,7 +188,6 @@ export async function createMap(host, { onLongPress, onLongPressStart, onLongPre
           layers = buildAreaLayers(world, ds);
         }
         kind = cfg.kind;
-        viewBox = cfg.view ? ds.views[cfg.view] : null;
         svg.classList.toggle('point-mode', kind === 'point');
         svg.classList.toggle('regional', ds.name !== 'world');
         point = buildPointLayer(layers, { rivers: extras.rivers, cities: extras.cities, maxTier: cfg.maxTier });

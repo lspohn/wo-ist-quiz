@@ -3,6 +3,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { extname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
+import { createHash } from 'node:crypto';
 import { WebSocketServer } from 'ws';
 import { loadGameData } from './modes.js';
 import { Highscores } from './highscores.js';
@@ -31,7 +32,8 @@ function loadStatic(dir) {
       if (statSync(full).isDirectory()) { walk(full); continue; }
       const body = readFileSync(full);
       const url = `/${relative(PUBLIC_DIR, full).split('\\').join('/')}`;
-      files.set(url, { body, gz: gzipSync(body), type: TYPES[extname(name)] ?? 'application/octet-stream' });
+      const etag = `"${createHash('sha1').update(body).digest('base64url').slice(0, 16)}"`;
+      files.set(url, { body, gz: gzipSync(body), etag, type: TYPES[extname(name)] ?? 'application/octet-stream' });
     }
   };
   walk(dir);
@@ -69,10 +71,18 @@ const server = createServer((req, res) => {
     res.end('Nicht gefunden');
     return;
   }
+  // Immer revalidieren (ETag → 304): Kartendaten und Server-Indizes müssen zusammenpassen,
+  // ein veralteter Cache würde Länder an falscher Stelle zeigen.
+  if (req.headers['if-none-match'] === file.etag) {
+    res.writeHead(304, { etag: file.etag, 'cache-control': 'no-cache' });
+    res.end();
+    return;
+  }
   const gzip = /\bgzip\b/.test(req.headers['accept-encoding'] ?? '');
   res.writeHead(200, {
     'content-type': file.type,
-    'cache-control': /^\/(data|flags|fonts)\//.test(url) ? 'public, max-age=86400' : 'no-cache',
+    etag: file.etag,
+    'cache-control': 'no-cache',
     ...(gzip ? { 'content-encoding': 'gzip' } : {}),
     vary: 'accept-encoding',
   });
