@@ -13,6 +13,15 @@ Auflösung und einen frechen Kommentar.
 - **Bestenliste**, Gesamtwertung über mehrere Spiele, Flaggen, über 250 Kommentare.
 - **Läuft komplett offline im Intranet:** keine Konten, keine Cookies, keine externen Dienste, keine Datenbank.
 
+![Frage, Auflösung mit den Tipps aller Mitspieler, Städte-Variante Deutschland und Endstand](docs/screenshots/spielablauf.webp)
+
+<details>
+<summary>Startseite und Lobby</summary>
+
+![Startseite mit offenem Spiel und Lobby mit Variantenwahl](docs/screenshots/start-lobby.webp)
+
+</details>
+
 ## Selbst hosten mit Docker (empfohlen)
 
 Voraussetzung: ein Rechner im Netz mit [Docker](https://docs.docker.com/get-docker/) – z. B. ein
