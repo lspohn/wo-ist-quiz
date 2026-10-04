@@ -41,16 +41,16 @@ Statt `http://192.168.178.23:7777` lässt sich das Spiel meist über den Geräte
 
 | Netz | Adresse | Hinweis |
 |---|---|---|
-| **FRITZ!Box** | `http://<gerätename>.fritz.box:7777` | z. B. `http://raspberrypi.fritz.box:7777`. Den Namen siehst und änderst du unter *Heimnetz → Netzwerk → Gerät bearbeiten*. Funktioniert auf allen Geräten, die die FRITZ!Box als DNS nutzen (Standard). |
-| **mDNS / Bonjour** | `http://<gerätename>.local:7777` | Raspberry Pi OS und die meisten Linux-Systeme bringen das mit (Paket `avahi-daemon`). iPhone, Mac und Windows lösen `.local` zuverlässig auf, Android je nach Version und Browser nicht immer. |
+| **mDNS / Bonjour** (meist ohne Zutun) | `http://<gerätename>.local:7777` | z. B. `http://raspberrypi.local:7777`. Raspberry Pi OS und die meisten Linux-Systeme bringen das mit (Paket `avahi-daemon`). iPhone, Mac und Windows lösen `.local` zuverlässig auf, ältere Android-Geräte nicht immer – dann die nächste Zeile nutzen. |
+| **FRITZ!Box** | `http://<gerätename>.fritz.box:7777` | z. B. `http://raspberrypi.fritz.box:7777`. Den Namen siehst und änderst du unter *Heimnetz → Netzwerk → Gerät bearbeiten*. Funktioniert auf allen Geräten, die die FRITZ!Box als DNS nutzen (Standard), also auch auf Android. |
 | **Andere Router** | oft `http://<gerätename>.lan:7777` oder `.home` | Siehe Router-Handbuch. |
 
 Weitere Tipps:
 
 - In der FRITZ!Box beim Server *„Diesem Netzwerkgerät immer die gleiche IPv4-Adresse zuweisen“* aktivieren –
   dann bleibt auch die IP-Adresse stabil.
-- Einen kurzen, gut tippbaren Gerätenamen wählen, z. B. `woist` → `http://woist.fritz.box:7777`.
-- Mit Port `80` (`"80:7777"` in `docker-compose.yml`) entfällt die Portangabe: `http://woist.fritz.box`.
+- Einen kurzen, gut tippbaren Gerätenamen wählen, z. B. `woist` → `http://woist.local:7777`.
+- Mit Port `80` (`"80:7777"` in `docker-compose.yml`) entfällt die Portangabe: `http://woist.local`.
 - Die Adresse als QR-Code ausdrucken oder auf dem Fernseher zeigen – dann ist man in Sekunden drin.
 
 ### Einstellungen
