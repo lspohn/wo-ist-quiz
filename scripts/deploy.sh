@@ -2,18 +2,21 @@
 # Eigenes Deployment (Beispiel): pusht nach einem Bare-Repo auf dem Zielrechner, checkt dort aus,
 # baut das Image nativ und startet den Container neu. Anpassbar über Umgebungsvariablen:
 #   DEPLOY_HOST (SSH-Ziel, Standard: raspi)   DEPLOY_REMOTE (Git-Remote, Standard: raspi)
-#   DEPLOY_PORT (Standard: 7777)
+#   DEPLOY_PORT (Standard: 7777)   DEPLOY_REPO (Bare-Repo auf dem Ziel, Standard: /git/wo-ist-quiz.git)
 set -euo pipefail
 HOST="${DEPLOY_HOST:-raspi}"
 REMOTE="${DEPLOY_REMOTE:-raspi}"
 PORT="${DEPLOY_PORT:-7777}"
+REPO="${DEPLOY_REPO:-/git/wo-ist-quiz.git}"
 git push "$REMOTE" main
-ssh "$HOST" PORT="$PORT" bash -s <<'REMOTE_SCRIPT'
+ssh "$HOST" PORT="$PORT" REPO="$REPO" bash -s <<'REMOTE_SCRIPT'
 set -euo pipefail
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"   # Docker unter macOS (Homebrew/Colima)
 NAME=wo-ist-quiz
 DIR="$HOME/$NAME"
+case "$REPO" in /*) ;; *) REPO="$HOME/$REPO" ;; esac
 if [ -d "$DIR/.git" ]; then git -C "$DIR" fetch -q origin && git -C "$DIR" reset -q --hard origin/main
-else git clone -q -b main "/git/$NAME.git" "$DIR"; fi
+else git clone -q -b main "$REPO" "$DIR"; fi
 cd "$DIR"
 docker build -q -t "$NAME:latest" .
 # einmalige Übernahme der Bestenliste aus dem früheren Namen „laender-quiz“

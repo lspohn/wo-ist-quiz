@@ -128,6 +128,7 @@ simple.forEach((f, i) => {
   mapCountries.push(entry);
   meta.push({
     i,
+    ne: p.NE_ID,
     iso,
     ...(alias === null ? {} : { alias }),
     name: NAME_OVERRIDES[iso] ?? NAME_OVERRIDES[p.ADMIN] ?? p.NAME_DE,
@@ -170,3 +171,6 @@ console.log(`Features: ${meta.length}, Ziele schwer: ${meta.filter((m) => m.targ
 console.log(`Punkte (Kleinstaaten): ${mapCountries.filter((c) => c.dot).length}`);
 if (missing.length || missingMedium.length) console.log('FEHLEN:', missing, missingMedium);
 console.log(`map.json: ${(mapJson.length / 1024).toFixed(0)} KB, Höhe ${height}`);
+
+// Europa-Karte hängt an den Welt-Indizes – immer gemeinsam neu bauen
+await import('./build-europe.mjs');

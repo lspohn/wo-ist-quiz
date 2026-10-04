@@ -32,8 +32,9 @@ function loadStatic(dir) {
       if (statSync(full).isDirectory()) { walk(full); continue; }
       const body = readFileSync(full);
       const url = `/${relative(PUBLIC_DIR, full).split('\\').join('/')}`;
-      const etag = `"${createHash('sha1').update(body).digest('base64url').slice(0, 16)}"`;
-      files.set(url, { body, gz: gzipSync(body), etag, type: TYPES[extname(name)] ?? 'application/octet-stream' });
+      const hash = createHash('sha1').update(body).digest('base64url').slice(0, 16);
+      // eigener starker ETag je Codierung (RFC 9110 §8.8.3)
+      files.set(url, { body, gz: gzipSync(body), etag: `"${hash}"`, etagGz: `"${hash}-gz"`, type: TYPES[extname(name)] ?? 'application/octet-stream' });
     }
   };
   walk(dir);
@@ -73,15 +74,17 @@ const server = createServer((req, res) => {
   }
   // Immer revalidieren (ETag → 304): Kartendaten und Server-Indizes müssen zusammenpassen,
   // ein veralteter Cache würde Länder an falscher Stelle zeigen.
-  if (req.headers['if-none-match'] === file.etag) {
-    res.writeHead(304, { etag: file.etag, 'cache-control': 'no-cache' });
+  const gzip = /\bgzip\b/.test(req.headers['accept-encoding'] ?? '');
+  const etag = gzip ? file.etagGz : file.etag;
+  const match = (req.headers['if-none-match'] ?? '').split(',').map((t) => t.trim().replace(/^W\//, ''));
+  if (match.includes(etag)) {
+    res.writeHead(304, { etag, 'cache-control': 'no-cache', vary: 'accept-encoding' });
     res.end();
     return;
   }
-  const gzip = /\bgzip\b/.test(req.headers['accept-encoding'] ?? '');
   res.writeHead(200, {
     'content-type': file.type,
-    etag: file.etag,
+    etag,
     'cache-control': 'no-cache',
     ...(gzip ? { 'content-encoding': 'gzip' } : {}),
     vary: 'accept-encoding',

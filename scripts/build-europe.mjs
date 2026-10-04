@@ -18,7 +18,11 @@ const inBox = inBoxOf(BOX);
 
 const meta = JSON.parse(readFileSync(file('server/data/countries.json'), 'utf8'));
 const world = (await load('ne10')).features.filter((f) => f.properties.ISO_A2_EH !== 'AQ');
-if (world.length !== meta.length) throw new Error('Weltkarte und countries.json passen nicht zusammen – erst npm run build:map');
+// Jedes Feature muss über die stabile Natural-Earth-ID zum selben Index wie in countries.json passen
+const mismatch = world.findIndex((f, i) => meta[i]?.ne !== f.properties.NE_ID);
+if (world.length !== meta.length || mismatch >= 0) {
+  throw new Error(`Weltkarte und countries.json passen nicht zusammen (Index ${mismatch}) – erst npm run build:map`);
+}
 
 // Länder im Ausschnitt; Index = Position in der Weltliste
 const picked = world.map((f, i) => ({ f, i })).filter(({ f }) => inBox(f));
@@ -49,22 +53,31 @@ for (const f of clipped) {
     continue;
   }
   const entry = { i, d, b: path.bounds(f).flat().map(Math.round) };
+  // Kernbereich (größtes sichtbares Teilstück) für Zoom und als Ersatzanker
+  const parts = f.geometry.type === 'MultiPolygon'
+    ? f.geometry.coordinates.map((coordinates) => ({ type: 'Polygon', coordinates }))
+    : [f];
+  const big = parts.reduce((a, b) => (path.area(b) > path.area(a) ? b : a));
+  if (parts.length > 1) entry.mb = path.bounds(big).flat().map(Math.round);
+  // Labelpunkt nur, wenn er im sichtbaren Ausschnitt liegt (Iran, Russland …: sonst Schwerpunkt des sichtbaren Teils)
   const label = projection([p.LABEL_X, p.LABEL_Y]);
-  if (label) entry.l = label.map(round1);
-  // Kernbereich (größtes Teilstück im Ausschnitt) für den Zoom bei der Auflösung
-  if (f.geometry.type === 'MultiPolygon') {
-    const parts = f.geometry.coordinates.map((coordinates) => ({ type: 'Polygon', coordinates }));
-    const big = parts.reduce((a, b) => (path.area(b) > path.area(a) ? b : a));
-    entry.mb = path.bounds(big).flat().map(Math.round);
-  }
-  if (geoArea(world[i]) < DOT_SR && label && m.target) entry.dot = label.map(round1);
+  const visible = label && label[0] >= 0 && label[0] <= WIDTH && label[1] >= 0 && label[1] <= height;
+  entry.l = (visible ? label : path.centroid(big)).map(round1);
+  if (geoArea(world[i]) < DOT_SR && visible && m.target) entry.dot = label.map(round1);
   areas.push(entry);
 }
 
-const cities = JSON.parse(readFileSync(file('server/data/eu-cities.json'), 'utf8')).map((c) => {
+// Städte: Servermetadaten aus dem Schnappschuss erzeugen, daraus die Kartenpunkte
+const isoName = new Map(meta.filter((m) => m.target).map((m) => [m.iso, m.name]));
+const euCities = JSON.parse(readFileSync(file('scripts/data/cities-eu.json'), 'utf8'))
+  .map((c, i) => ({ i, name: c.name, iso: c.iso, country: isoName.get(c.iso) ?? c.iso, capital: c.capital, pop: c.pop, lat: c.lat, lon: c.lon }));
+writeFileSync(file('server/data/eu-cities.json'), JSON.stringify(euCities));
+const cities = euCities.map((c) => {
   const [x, y] = projection([c.lon, c.lat]);
   return { i: c.i, x: round1(x), y: round1(y), t: c.capital ? 1 : 2 };
 });
+const outside = cities.filter((c) => c.x < 0 || c.x > WIDTH || c.y < 0 || c.y > height);
+if (outside.length) throw new Error(`Städte außerhalb des Ausschnitts: ${outside.map((c) => euCities[c.i].name)}`);
 
 const mapJson = {
   w: WIDTH,

@@ -4,3 +4,8 @@ node_modules/
 .playwright-cli/
 .cache/
 /data/
+
+# Lokale, nicht öffentliche Einstellungen (Deploy-Ziele, Netzwerkdetails)
+CLAUDE.local.md
+*.local.md
+*.local.sh

@@ -26,8 +26,12 @@ Lizenz: Code AGPL-3.0 (`LICENSE`), Texte CC BY 4.0 (`LICENSE-CONTENT.md`), Daten
 
 - `node scripts/fetch-places.mjs` – Städte-Schnappschuss nach `scripts/data/` (Wikidata: deutsche Städte ≥ 20.000 mit
   Gemeindeschlüssel, Hauptstädte Europas; GeoNames cities15000 für kuratierte europäische Großstädte). Eingecheckt.
-- `node scripts/build-germany.mjs` – Deutschland-Karte (Natural Earth 10m Bundesländer, Nachbarländer, Flüsse, Seen, Städte)
+- `node scripts/build-germany.mjs` – Deutschland-Karte (Bundesländer aus BKG VG1000, © GeoBasis-DE / BKG, Datenlizenz
+  Deutschland 2.0 – Quellenvermerk muss sichtbar bleiben; Nachbarländer, Flüsse, Seen, Städte)
   → `public/data/germany.json`, `server/data/de-*.json`.
+- `node scripts/build-europe.mjs` – eigene Europa-Karte (Kegelprojektion, rechteckiger Ausschnitt). Länder tragen die
+  Welt-Indizes; Abgleich über `ne` (Natural-Earth-ID) in `countries.json`. Läuft automatisch am Ende von `build:map`.
+  Erzeugt auch `server/data/eu-cities.json` aus `scripts/data/cities-eu.json`.
 - `node scripts/build-usa.mjs` – USA-Karte (Albers mit Alaska/Hawaii als Einschub, Kanada/Mexiko als Kontext)
   → `public/data/usa.json`, `server/data/us-states.json`. Gemeinsame Helfer: `scripts/lib/regional.mjs`.
 - `node scripts/copy-flags.mjs` – Flaggen nach `public/flags/` (flag-icons + Commons-Downloads aus `.cache/flags-de|us/`;
@@ -39,6 +43,11 @@ Zielländer und der Pool „mittel“ stehen in `scripts/countries-config.mjs`.
 ## Punkte
 
 Exakt 1000 + bis zu 100 Tempobonus · Nachbarland 500 · sonst `450·e^(−km/1500)`, gleicher Kontinent mindestens 100 · keine Antwort 0.
+
+## Caching
+
+Statische Dateien werden immer per ETag revalidiert (`no-cache`, eigener ETag je Codierung). Nie wieder lange
+`max-age` auf Kartendaten: Client-Karte und Server-Indizes müssen exakt zusammenpassen (`test/data.test.js` prüft das).
 
 ## Entwickeln & Testen
 
