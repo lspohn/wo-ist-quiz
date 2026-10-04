@@ -21,6 +21,7 @@ const TYPES = {
   '.png': 'image/png',
   '.webmanifest': 'application/manifest+json',
   '.woff2': 'font/woff2',
+  '.webp': 'image/webp',
 };
 
 // Alle statischen Dateien einmal in den RAM laden (klein, Raspi-freundlich)

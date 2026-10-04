@@ -161,7 +161,8 @@ mkdirSync(fileURLToPath(new URL('../server/data/', import.meta.url)), { recursiv
 for (const m of meta) m.europe = m.target && EUROPE_ISO.includes(m.iso);
 console.log(`Europa: ${meta.filter((m) => m.europe).length} Länder`);
 
-const mapJson = JSON.stringify({ w: WIDTH, h: height, graticule, outline, c: mapCountries });
+const proj = { type: 'naturalEarth1', scale: projection.scale(), translate: projection.translate() };
+const mapJson = JSON.stringify({ w: WIDTH, h: height, proj, graticule, outline, c: mapCountries });
 writeFileSync(MAP_OUT, mapJson);
 writeFileSync(META_OUT, JSON.stringify(meta));
 

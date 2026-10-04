@@ -25,7 +25,7 @@ function fakeClock() {
   };
 }
 
-function setup(settings = { rounds: 5, timeLimit: 20 }) {
+function setup(settings = { rounds: 5, timeLimit: 15 }) {
   const clock = fakeClock();
   const lobby = new Lobby({ id: 'L1', hostId: 'a', settings, data, clock, random: () => 0.3 });
   lobby.addPlayer({ id: 'a', name: 'Anna' });
@@ -34,12 +34,15 @@ function setup(settings = { rounds: 5, timeLimit: 20 }) {
 }
 
 test('sanitizeSettings rejects unknown values', () => {
-  assert.deepEqual(sanitizeSettings({ difficulty: 'leicht', timeLimit: 45, rounds: 15 }),
-    { mode: 'welt', difficulty: 'mittel', timeLimit: 40, rounds: 15 });
+  assert.deepEqual(sanitizeSettings({ difficulty: 'leicht', timeLimit: 40, rounds: 15 }),
+    { mode: 'welt', difficulty: 'mittel', timeLimit: 30, rounds: 15, rivers: true, relief: true });
+  assert.equal(sanitizeSettings({ timeLimit: 45 }).timeLimit, 45);
+  assert.deepEqual([sanitizeSettings({ rivers: false }).rivers, sanitizeSettings({ relief: false }).relief], [false, false]);
+  assert.equal(sanitizeSettings({ rivers: 'nein' }).rivers, true);
   assert.equal(sanitizeSettings({ mode: 'de-staedte', difficulty: 'sehrschwer' }).difficulty, 'sehrschwer');
   assert.equal(sanitizeSettings({ mode: 'welt', difficulty: 'sehrschwer' }).difficulty, 'mittel');
   assert.equal(sanitizeSettings({ mode: 'mond' }).mode, 'welt');
-  assert.equal(sanitizeSettings({ timeLimit: 20 }).timeLimit, 20);
+  assert.equal(sanitizeSettings({ timeLimit: 15 }).timeLimit, 15);
 });
 
 test('only host can start the game', () => {
@@ -66,7 +69,7 @@ test('round ends on timeout and missing players get 0', () => {
   const { lobby, clock } = setup();
   lobby.start('a');
   lobby.guess('a', lobby.round.target.i);
-  clock.advance(20_000);
+  clock.advance(15_000);
   assert.equal(lobby.phase, 'reveal');
   const ben = lobby.round.results.find((r) => r.id === 'b');
   assert.deepEqual([ben.points, ben.category], [0, 'none']);
@@ -135,7 +138,7 @@ test('lobbyView hides other guesses during question', () => {
   assert.equal(viewB.players.find((p) => p.id === 'a').answered, true);
   assert.ok(!JSON.stringify(viewB).includes('"guess"'));
   assert.equal(typeof viewB.question.target, 'string');
-  assert.ok(viewB.question.remainingMs <= 20_000);
+  assert.ok(viewB.question.remainingMs <= 15_000);
 });
 
 test('late joiner can participate in running game', () => {
@@ -263,4 +266,8 @@ test('start refuses when the question pool is empty', () => {
   lobby.settings = { ...lobby.settings, difficulty: 'gibtsnicht' };
   assert.equal(lobby.start('a'), false);
   assert.equal(lobby.phase, 'lobby');
+});
+
+test('reveal moves on after 20 seconds', () => {
+  assert.equal(REVEAL_MS, 20_000);
 });

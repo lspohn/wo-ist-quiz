@@ -102,7 +102,9 @@ export function flagOf(mode, item) {
   if (mode === 'deutschland') return STATE_FLAGS[item.name] ?? null;
   if (mode === 'de-staedte') return STATE_FLAGS[item.state] ?? null;
   if (mode === 'usa') return item.target ? `us-${item.postal.toLowerCase()}` : null;
-  return item.iso && item.iso !== '-99' ? item.iso.toLowerCase() : null;
+  // Flaggen gibt es nur für Zielländer (keine für Grönland, Puerto Rico, Westsahara …)
+  if (mode === 'europa-staedte') return item.iso?.toLowerCase() ?? null;
+  return item.target && item.iso && item.iso !== '-99' ? item.iso.toLowerCase() : null;
 }
 
 /** Recognition hint for disputed states (also for their capitals). */

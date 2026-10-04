@@ -34,11 +34,20 @@ Lizenz: Code AGPL-3.0 (`LICENSE`), Texte CC BY 4.0 (`LICENSE-CONTENT.md`), Daten
   Erzeugt auch `server/data/eu-cities.json` aus `scripts/data/cities-eu.json`.
 - `node scripts/build-usa.mjs` – USA-Karte (Albers mit Alaska/Hawaii als Einschub, Kanada/Mexiko als Kontext)
   → `public/data/usa.json`, `server/data/us-states.json`. Gemeinsame Helfer: `scripts/lib/regional.mjs`.
+- `node scripts/build-relief.mjs` – Relief-Overlays `public/relief/<karte>.webp` aus Natural Earth SR_HR (Schummerung,
+  Public Domain). Ohne GDAL: Projektion je Pixel invertiert, Quellraster bilinear abgetastet, Maske aus den eigenen
+  Landflächen. Braucht `proj` (Projektionsparameter) in den Karten-JSONs – nach jedem Kartenbuild neu laufen lassen.
 - `node scripts/copy-flags.mjs` – Flaggen nach `public/flags/` (flag-icons + Commons-Downloads aus `.cache/flags-de|us/`;
   sehr detailreiche Flaggen werden als kleines WebP in eine SVG-Hülle gerastert).
 - `npm run build:map` erzeugt aus Natural Earth 10m (Download nach `.cache/`) die eingecheckten Dateien
 `public/data/map.json` (projizierte SVG-Pfade) und `server/data/countries.json` (Namen, Kontinent, Nachbarn, Grenzpunkte).
 Zielländer und der Pool „mittel“ stehen in `scripts/countries-config.mjs`.
+
+## Einstellungen
+
+Zeit 15/30/45 s, Runden 5/10/15, Auflösung 20 s. Kartenebenen `rivers`/`relief` (Lobby-Schalter, gelten für alle).
+Stufen haben in `public/js/modes.js` ein `label` und eine kurze Zeile `sub` (wird im Auswahlknopf gezeigt);
+interne Schlüssel bleiben `mittel`/`schwer`/`sehrschwer`, damit Bestenlisten-Schlüssel stabil sind.
 
 ## Punkte
 

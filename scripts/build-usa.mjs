@@ -21,7 +21,7 @@ const states = await shape(rawStates, process.env.US_SIMPLIFY ?? '40%');
 const context = await shape((await load('ne10')).features.filter((f) => ['CA', 'MX', 'CU', 'BS'].includes(f.properties.ISO_A2_EH)), '10%', CLIP);
 // Gewässer nur im Festland-Rahmen – sie liegen über den Staaten und dürfen nicht in die Einschübe ragen
 const rivers = await shape((await load('ne_10m_rivers_lake_centerlines')).features
-  .filter((f) => (f.properties.scalerank ?? 10) <= 7 && inBoxOf(MAINLAND)(f)), '30%', MAINLAND);
+  .filter((f) => (f.properties.scalerank ?? 10) <= 7 && inBoxOf(MAINLAND)(f)), null, MAINLAND);
 const lakes = await shape((await load('ne_10m_lakes')).features
   .filter((f) => (f.properties.scalerank ?? 10) <= 4 && inBoxOf(MAINLAND)(f)), '30%', MAINLAND);
 
@@ -61,6 +61,7 @@ const insetFrame = (postal) => {
 const mapJson = {
   w: WIDTH,
   h: height,
+  proj: { type: 'albersUsa', scale: projection.scale(), translate: projection.translate() },
   states: mapStates,
   context: context.map((f) => ctxPath(f)).filter(Boolean),
   rivers: rivers.map((f) => ({ d: ctxPath(f), r: (f.properties.scalerank ?? 10) <= 4 ? 1 : 2 })).filter((r) => r.d),

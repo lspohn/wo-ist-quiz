@@ -11,9 +11,9 @@ test('question pools have the expected sizes', () => {
   assert.equal(questionPool(data, 'europa', 'mittel').length, 47);
   assert.equal(questionPool(data, 'deutschland', 'mittel').length, 16);
   assert.equal(questionPool(data, 'deutschland', 'schwer').length, 16 + 13);
-  assert.equal(questionPool(data, 'de-staedte', 'mittel').length, 79);
-  assert.equal(questionPool(data, 'de-staedte', 'schwer').length, 194);
-  assert.equal(questionPool(data, 'de-staedte', 'sehrschwer').length, 704);
+  assert.equal(questionPool(data, 'de-staedte', 'mittel').length, 23);
+  assert.equal(questionPool(data, 'de-staedte', 'schwer').length, 79);
+  assert.equal(questionPool(data, 'de-staedte', 'sehrschwer').length, 194);
   assert.equal(questionPool(data, 'europa-staedte', 'mittel').length, 47);
   assert.ok(questionPool(data, 'europa-staedte', 'schwer').length > 120);
 });
@@ -93,4 +93,17 @@ test('usa mode: 50 states, capital questions, own scale and flags', () => {
   assert.equal(flagOf('usa', us('TX')), 'us-tx');
   assert.equal(flagOf('usa', us('DC')), null);
   assert.ok(!questionPool(data, 'usa', 'mittel').some((x) => x.subject === 'Washington, D.C.'));
+});
+
+test('every flag code the server can send exists as a file', async () => {
+  const { existsSync } = await import('node:fs');
+  const has = (code) => existsSync(new URL(`../public/flags/${code}.svg`, import.meta.url));
+  const modes = { welt: data.world, europa: data.world, deutschland: data.deStates, usa: data.usStates, 'de-staedte': data.deCities, 'europa-staedte': data.euCities };
+  for (const [mode, items] of Object.entries(modes)) {
+    for (const item of items) {
+      const code = flagOf(mode, item);
+      if (code) assert.ok(has(code), `${mode}: ${item.name} → ${code}`);
+    }
+  }
+  assert.equal(flagOf('welt', data.world.find((c) => c.iso === 'GL')), null);
 });

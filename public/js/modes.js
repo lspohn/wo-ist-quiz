@@ -8,8 +8,8 @@ export const MODES = {
     map: 'world',
     kind: 'area',
     levels: {
-      mittel: { label: 'Mittel', hint: 'Rund 120 bekanntere Länder.' },
-      schwer: { label: 'Schwer', hint: 'Alle 197 Länder – inklusive Tuvalu, Nauru und Konsorten.' },
+      mittel: { label: 'Mittel', sub: '≈ 120 bekannte Länder', hint: 'Rund 120 bekanntere Länder.' },
+      schwer: { label: 'Schwer', sub: 'alle 197 Länder', hint: 'Alle 197 Länder – inklusive Tuvalu, Nauru und Konsorten.' },
     },
   },
   europa: {
@@ -18,8 +18,8 @@ export const MODES = {
     map: 'europe',
     kind: 'area',
     levels: {
-      mittel: { label: 'Mittel', hint: 'Alle 47 Länder Europas.' },
-      schwer: { label: 'Schwer', hint: 'Länder plus: „Von welchem Land ist Bratislava die Hauptstadt?“' },
+      mittel: { label: 'Länder', sub: '47 Länder', hint: 'Alle 47 Länder Europas.' },
+      schwer: { label: 'Länder + Hauptstädte', sub: 'auch Hauptstadtfragen', hint: 'Länder plus: „Von welchem Land ist Bratislava die Hauptstadt?“' },
     },
   },
   'europa-staedte': {
@@ -29,8 +29,8 @@ export const MODES = {
     kind: 'point',
     scaleKm: 300,
     levels: {
-      mittel: { label: 'Mittel', hint: 'Die Hauptstädte Europas.', maxTier: 1 },
-      schwer: { label: 'Schwer', hint: 'Hauptstädte plus rund 80 Großstädte.', maxTier: 2 },
+      mittel: { label: 'Hauptstädte', sub: '47 Städte', hint: 'Die Hauptstädte Europas.', maxTier: 1 },
+      schwer: { label: '+ Großstädte', sub: '130 Städte', hint: 'Hauptstädte plus rund 80 Großstädte.', maxTier: 2 },
     },
   },
   deutschland: {
@@ -39,8 +39,8 @@ export const MODES = {
     map: 'germany',
     kind: 'area',
     levels: {
-      mittel: { label: 'Mittel', hint: 'Die 16 Bundesländer.' },
-      schwer: { label: 'Schwer', hint: 'Länder plus: „Von welchem Bundesland ist Stuttgart die Hauptstadt?“' },
+      mittel: { label: 'Bundesländer', sub: '16 Länder', hint: 'Die 16 Bundesländer.' },
+      schwer: { label: 'Länder + Hauptstädte', sub: 'auch Hauptstadtfragen', hint: 'Länder plus: „Von welchem Bundesland ist Stuttgart die Hauptstadt?“' },
     },
   },
   usa: {
@@ -49,8 +49,8 @@ export const MODES = {
     map: 'usa',
     kind: 'area',
     levels: {
-      mittel: { label: 'Mittel', hint: 'Die 50 Bundesstaaten.' },
-      schwer: { label: 'Schwer', hint: 'Staaten plus: „Von welchem Bundesstaat ist Sacramento die Hauptstadt?“' },
+      mittel: { label: 'Staaten', sub: '50 Staaten', hint: 'Die 50 Bundesstaaten.' },
+      schwer: { label: 'Staaten + Hauptstädte', sub: 'auch Hauptstadtfragen', hint: 'Staaten plus: „Von welchem Bundesstaat ist Sacramento die Hauptstadt?“' },
     },
   },
   'de-staedte': {
@@ -60,9 +60,9 @@ export const MODES = {
     kind: 'point',
     scaleKm: 45,
     levels: {
-      mittel: { label: 'Mittel', hint: 'Großstädte ab 100.000 Einwohnern (79).', maxTier: 1 },
-      schwer: { label: 'Schwer', hint: 'Städte ab 50.000 Einwohnern (194).', maxTier: 2 },
-      sehrschwer: { label: 'Sehr schwer', hint: 'Städte ab 20.000 Einwohnern (704). Viel Glück.', maxTier: 3 },
+      mittel: { label: 'Mittel', sub: 'ab 300.000 Einw.', hint: 'Die 23 größten Städte ab 300.000 Einwohnern.', maxTier: 1 },
+      schwer: { label: 'Schwer', sub: 'ab 100.000 Einw.', hint: 'Alle 79 Großstädte ab 100.000 Einwohnern.', maxTier: 2 },
+      sehrschwer: { label: 'Extrem', sub: 'ab 50.000 Einw.', hint: '194 Städte ab 50.000 Einwohnern. Viel Glück.', maxTier: 3 },
     },
   },
 };

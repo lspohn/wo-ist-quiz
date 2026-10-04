@@ -128,3 +128,7 @@
 
 /* Quellenvermerk der Karte (Pflicht für BKG-Daten) */
 .map-credit { margin: 10px 0 0; font-size: 0.68rem; color: rgba(159, 176, 194, 0.7); text-align: center; letter-spacing: 0.01em; }
+
+/* Auflösung: Zielname mit Flagge nicht unter den ✕-Knopf rutschen lassen */
+.hud-row + .hud-target { margin-top: 8px; }
+.hud-leave { margin: 0; }

@@ -5,12 +5,12 @@ import { MODE_IDS, levelOf } from '../public/js/modes.js';
 
 export const SETTINGS_OPTIONS = {
   mode: MODE_IDS,
-  timeLimit: [20, 40, 60],
+  timeLimit: [15, 30, 45],
   rounds: [5, 10, 15],
 };
-export const DEFAULT_SETTINGS = { mode: 'welt', difficulty: 'mittel', timeLimit: 40, rounds: 10 };
+export const DEFAULT_SETTINGS = { mode: 'welt', difficulty: 'mittel', timeLimit: 30, rounds: 10, rivers: true, relief: true };
 export const MAX_PLAYERS = 12;
-export const REVEAL_MS = 45_000;
+export const REVEAL_MS = 20_000;
 export const HOST_GRACE_MS = 15_000;
 export const PLAYER_COLORS = [
   '#ff6b4a', '#3ec5ff', '#ffd23f', '#9b5de5', '#2ee6a6', '#ff4fa3',
@@ -25,6 +25,8 @@ export function sanitizeSettings(input = {}, base = DEFAULT_SETTINGS) {
   for (const [key, allowed] of Object.entries(SETTINGS_OPTIONS)) {
     if (allowed.includes(input[key])) out[key] = input[key];
   }
+  // Kartenebenen (Flüsse, Relief) sind einfache Schalter
+  for (const key of ['rivers', 'relief']) if (typeof input[key] === 'boolean') out[key] = input[key];
   // Schwierigkeit hängt vom Modus ab; ungültige fallen auf die erste Stufe zurück
   out.difficulty = levelOf(out.mode, input.difficulty ?? out.difficulty);
   return out;

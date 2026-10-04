@@ -67,12 +67,12 @@ function segmented(label, key, options, value, enabled, onPick) {
   return h('div.setting', {},
     h('span.setting-label', {}, label),
     h('div.segmented', { role: 'radiogroup', 'aria-label': label },
-      options.map(([v, text]) => h('button.seg', {
+      options.map(([v, text, sub]) => h(`button.seg${sub ? '.seg-two' : ''}`, {
         role: 'radio',
         'aria-checked': String(v === value),
         disabled: !enabled,
         onclick: () => onPick({ [key]: v }),
-      }, text)),
+      }, h('span.seg-label', {}, text), sub ? h('small.seg-sub', {}, sub) : null)),
     ),
   );
 }
@@ -108,6 +108,20 @@ function podiumHeight(score, scores) {
   return Math.round(44 + 96 * ((score - base) / (max - base)));
 }
 
+// Kartenebenen als Schalter – gelten für alle in der Lobby
+function mapToggles(s, isHost, set) {
+  const toggle = (key, label) => h('button.toggle', {
+    role: 'switch',
+    'aria-checked': String(s[key] !== false),
+    disabled: !isHost,
+    onclick: () => set({ [key]: s[key] === false }),
+  }, h('span.toggle-knob', {}), label);
+  return h('div.setting', {},
+    h('span.setting-label', {}, 'Orientierung auf der Karte'),
+    h('div.toggles', {}, toggle('rivers', 'Flüsse & Seen'), toggle('relief', 'Gebirge (Relief)')),
+  );
+}
+
 function modePicker(s, isHost, set) {
   return h('section.modes', { role: 'radiogroup', 'aria-label': 'Spielvariante' },
     h('h2.section-title', {}, 'Variante'),
@@ -134,10 +148,11 @@ export function roomScreen(app) {
     ),
     modePicker(s, isHost, set),
     h('section.settings', {},
-      segmented('Schwierigkeit', 'difficulty', Object.entries(modeOf(s).levels).map(([k, v]) => [k, v.label]), levelOf(s.mode, s.difficulty), isHost, set),
-      segmented('Zeit pro Runde', 'timeLimit', [[20, '20 s'], [40, '40 s'], [60, '60 s']], s.timeLimit, isHost, set),
+      segmented('Schwierigkeit', 'difficulty', Object.entries(modeOf(s).levels).map(([k, v]) => [k, v.label, v.sub]), levelOf(s.mode, s.difficulty), isHost, set),
+      segmented('Zeit pro Runde', 'timeLimit', [[15, '15 s'], [30, '30 s'], [45, '45 s']], s.timeLimit, isHost, set),
       segmented('Runden', 'rounds', [[5, '5'], [10, '10'], [15, '15']], s.rounds, isHost, set),
       h('p.hint', {}, modeOf(s).levels[levelOf(s.mode, s.difficulty)].hint),
+      mapToggles(s, isHost, set),
     ),
     h('section', {},
       h('h2.section-title', {}, `Mitspieler (${l.players.length})`),

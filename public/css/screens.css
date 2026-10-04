@@ -148,3 +148,24 @@
 .chip-mode { background: rgba(46, 230, 166, 0.16); color: var(--mint); }
 .hs-tabgroup { flex-wrap: wrap; max-width: 100%; }
 .hs-modes { flex-basis: 100%; border-radius: 18px; }
+
+/* Zweizeilige Auswahl (Stufe + kurze Erklärung) */
+.seg-two { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 6px 8px; line-height: 1.15; min-height: 54px; }
+.seg-label { font-weight: 700; }
+.seg-sub { font-size: 0.7rem; font-weight: 600; opacity: 0.75; }
+.segmented { grid-auto-rows: 1fr; border-radius: 20px; }
+.seg { border-radius: 16px; }
+
+/* Schalter für Kartenebenen */
+.toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+.toggle {
+  display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 14px 0 6px; border-radius: 999px;
+  border: 1.5px solid rgba(239, 228, 204, 0.18); background: rgba(239, 228, 204, 0.06); color: var(--paper-dim); font-weight: 700; cursor: pointer;
+}
+.toggle-knob { width: 34px; height: 22px; border-radius: 999px; background: rgba(239, 228, 204, 0.18); position: relative; transition: background 0.2s; }
+.toggle-knob::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--paper-dim); transition: transform 0.2s, background 0.2s; }
+.toggle[aria-checked='true'] { color: var(--paper); border-color: rgba(46, 230, 166, 0.5); }
+.toggle[aria-checked='true'] .toggle-knob { background: rgba(46, 230, 166, 0.45); }
+.toggle[aria-checked='true'] .toggle-knob::after { transform: translateX(12px); background: var(--mint); }
+.toggle[disabled] { cursor: default; opacity: 0.75; }
+.toggle:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }

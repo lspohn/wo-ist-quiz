@@ -28,8 +28,9 @@ if (world.length !== meta.length || mismatch >= 0) {
 const picked = world.map((f, i) => ({ f, i })).filter(({ f }) => inBox(f));
 const clipped = await shape(picked.map(({ f, i }) => ({ ...f, properties: { i } })), process.env.EU_SIMPLIFY ?? '30%', BOX);
 
+// Flüsse unvereinfacht – Natural Earth ist hier ohnehin schon grob
 const rivers = await shape((await load('ne_10m_rivers_lake_centerlines')).features
-  .filter((f) => (f.properties.scalerank ?? 10) <= 7 && inBox(f)), '40%', BOX);
+  .filter((f) => (f.properties.scalerank ?? 10) <= 7 && inBox(f)), null, BOX);
 const lakes = await shape((await load('ne_10m_lakes')).features
   .filter((f) => (f.properties.scalerank ?? 10) <= 5 && inBox(f)), '40%', BOX);
 
@@ -82,6 +83,7 @@ if (outside.length) throw new Error(`Städte außerhalb des Ausschnitts: ${outsi
 const mapJson = {
   w: WIDTH,
   h: height,
+  proj: { type: 'conicConformal', parallels: [40, 65], rotate: [-12, 0], scale: projection.scale(), translate: projection.translate() },
   states: areas,
   rivers: rivers.map((f) => ({ d: path(f), r: (f.properties.scalerank ?? 10) <= 4 ? 1 : 2 })).filter((r) => r.d),
   lakes: lakes.map((f) => path(f)).filter(Boolean),
